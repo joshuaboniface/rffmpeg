@@ -36,7 +36,8 @@
 # Imports and helper functions
 ###############################################################################
 
-import os, sys, time, io
+import os
+import sys
 import yaml
 import subprocess
 
