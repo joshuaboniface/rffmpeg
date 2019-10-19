@@ -40,7 +40,9 @@ This example setup is the one I use for `rffmpeg`, involving a Jellyfin server (
 
 1. On your Jellyfin server, create a new SSH private keypair owned by the Jellyfin service user.
 
-1. Install the public key of the new SSH private keypair under the remote user on the transcode server. Verify that SSH is successful from the Jellyfin server to the transcode server as the selected user.
+1. Install the public key of the new SSH private keypair under the remote user on the transcode server.
+
+1. Verify that SSH is successful from the Jellyfin server (as the Jellyfin user) to the transcode server as expected. Running `sudo -u <jellyfin-user> rffmpeg.py` once with no arguments will accomplish this test. This also ensures that the SSH host key of the remote server is saved before Jellyfin attempts to run the command.
 
 1. Install the NFS client, and mount the temporary transcoding directory from the remote server to your `transcoding-temp` directory as set in Jellyfin.
 
