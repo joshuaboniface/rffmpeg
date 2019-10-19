@@ -66,14 +66,15 @@ with open(config_file, 'r') as cfgfile:
         exit(1)
 try:
     config = {
-        'state_tempdir':  o_config['rffmpeg']['state']['tempdir'],
-        'state_filename': o_config['rffmpeg']['state']['filename'],
-        'state_contents': o_config['rffmpeg']['state']['contents'],
-        'remote_hosts':   o_config['rffmpeg']['remote']['hosts'],
-        'remote_user':    o_config['rffmpeg']['remote']['user'],
-        'remote_args':    o_config['rffmpeg']['remote']['args'],
-        'pre_commands':   o_config['rffmpeg']['commands']['pre'],
-        'ffmpeg_command': o_config['rffmpeg']['commands']['ffmpeg']
+        'state_tempdir':   o_config['rffmpeg']['state']['tempdir'],
+        'state_filename':  o_config['rffmpeg']['state']['filename'],
+        'state_contents':  o_config['rffmpeg']['state']['contents'],
+        'remote_hosts':    o_config['rffmpeg']['remote']['hosts'],
+        'remote_user':     o_config['rffmpeg']['remote']['user'],
+        'remote_args':     o_config['rffmpeg']['remote']['args'],
+        'pre_commands':    o_config['rffmpeg']['commands']['pre'],
+        'ffmpeg_command':  o_config['rffmpeg']['commands']['ffmpeg'],
+        'ffprobe_command': o_config['rffmpeg']['commands']['ffprobe']
     }
 except Exception as e:
     debug('ERROR: Failed to load configuration: {}'.format(e))
@@ -150,8 +151,11 @@ for cmd in config['pre_commands']:
     if cmd:
         rffmpeg_command.append(cmd)
 
-# Add ffmpeg component
-rffmpeg_command.append(config['ffmpeg_command'])
+# Verify if we're in ffmpeg or ffprobe mode
+if all_args[0] == 'ffprobe':
+    rffmpeg_command.append(config['ffprobe_command'])
+else:
+    rffmpeg_command.append(config['ffmpeg_command'])
 
 # Parse and re-quote the arguments
 for arg in cli_ffmpeg_args:

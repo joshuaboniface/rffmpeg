@@ -12,6 +12,8 @@ rffmpeg is a remote FFmpeg wrapper used to execute FFmpeg commands on a remote s
 
 1. Install `rffmpeg.py` somewhere useful, for instance at `/usr/local/bin/rffmpeg.py`.
 
+1. Create symlinks for the command names `ffmpeg` and `ffprobe` to `rffmpeg.py`, for instance `/usr/local/bin/ffmpeg -> /usr/local/bin/rffmpeg.py` and `/usr/local/bin/ffprobe -> /usr/local/bin/rffmpeg.py`.
+
 1. Edit your media program to use the `rffmpeg.py` binarry instead of the standard `ffmpeg` binary.
 
 1. Profit!
@@ -48,7 +50,7 @@ This example setup is the one I use for `rffmpeg`, involving a Jellyfin server (
 
 1. Install the `rffmpeg` program as detailed above.
 
-1. In Jellyfin, set the `rffmpeg.py` binary as your "FFmpeg path".
+1. In Jellyfin, set the `rffmpeg.py` binary, via its `ffmpeg` symlink, as your "FFmpeg path". The symlinks are important for Jellyfin to properly call the `ffprobe` command as well.
 
 1. Try running a transcode and verifying that the `rffmpeg` program works as expected. The flow should be:
 
