@@ -24,12 +24,14 @@ rffmpeg:
         # The remote SSH user to connect as
         user: ffmpeg
 
-        # A YAML list of additional SSH arguments (e.g. private keys)
+        # A YAML list of additional SSH arguments (e.g. private keys),
+        # one line per space-separated argument element.
         args: 
             - ""
 
     commands:
-        # A YAML list of prefixes to the ffmpeg command (e.g. sudo, nice, etc.)
+        # A YAML list of prefixes to the ffmpeg command (e.g. sudo, nice, etc.),
+        # one line per space-separated command element.
         pre:
             - ""
 
