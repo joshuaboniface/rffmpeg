@@ -28,7 +28,7 @@ This example setup is the one I use for `rffmpeg`, involving a Jellyfin server (
 
    1. Create a temporary transcoding directory somewhere on the system. Ideally, this should be fast scratch storage with no persistence required. In my case I use a pair of RAID-0 SSDs, though you could use a ramdisk if you have sufficient RAM. For my purposes, I put this directory at `/var/transcode` and mount my SSD RAID there.
 
-   1. Create a user to accept SSH connections in and run the FFmpeg commands. I use a user called `jellyfin` with a home directory of `/var/lib/jellyfin`, identical to the user that is created by the Jellyfin server itself - this is important for the directory layout to work.
+   1. Create a user to accept SSH connections in and run the FFmpeg commands. I use a user called `jellyfin` with a home directory of `/var/lib/jellyfin`, identical to the user that is created by the Jellyfin server itself - this is important for the directory layout to work. For maximum compatibility, ensure this user has the exact same Unix UID as the Jellyfin user on your Jellyfin host.
 
    1. Ensure the temporary transcoding directory is owned by the new user.
 
