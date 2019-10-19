@@ -61,3 +61,12 @@ This example setup is the one I use for `rffmpeg`, involving a Jellyfin server (
     1. The FFmpeg process writes the output files to the NFS-exported temporary transcoding directory.
 
     1. Jelyfin reads the output files from the NFS-mounted temporary transcoding directory and plays back normally.
+
+## rffmpeg options
+
+### Remote hosts
+
+rffmpeg supports setting multiple hosts. It keeps state in `/run/shm/rffmpeg`, of all running processes. These state files are used during rffmpeg's initialization in order to determine the optimal target host. rffmpeg will run through these hosts sequentially, choosing the one with the fewest running rffmpeg jobs. This helps distribute the transcoding load across multiple servers.
+
+Note however that this setup is NOT compatible with the simple NFS-based export mentioned above. For this to work properly, ALL the involved hosts must share the same temporary storage, for instance exported from another machine to the source and transcode hosts.
+
