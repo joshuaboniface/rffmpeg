@@ -4,6 +4,8 @@ rffmpeg is a remote FFmpeg wrapper used to execute FFmpeg commands on a remote s
 
 ## Usage
 
+1. Install the required Python 3 dependencies: `yaml` and `subprocess`.
+
 1. Create the directory `/etc/rffmpeg`.
 
 1. Copy the `rffmpeg.yml.sampel` file to `/etc/rffmpeg/rffmpeg.yml` and edit it to suit your needs.
