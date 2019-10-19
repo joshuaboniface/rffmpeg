@@ -35,5 +35,5 @@ rffmpeg:
         pre:
             - ""
 
-        # ffmpeg command binary
+        # The (remote) ffmpeg command binary path
         ffmpeg: "/usr/lib/jellyfin-ffmpeg/ffmpeg"
