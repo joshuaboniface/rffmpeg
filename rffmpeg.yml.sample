@@ -29,7 +29,8 @@ rffmpeg:
         # A YAML list of additional SSH arguments (e.g. private keys),
         # one line per space-separated argument element.
         args: 
-            - ""
+            - "-i"
+            - "/var/lib/jellyfin/id_rsa"
 
     # Remote command configuration
     commands:
