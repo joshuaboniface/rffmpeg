@@ -1,0 +1,37 @@
+---
+# Example configuration file for rffmpeg
+# Copy this sample to `/etc/rffmpeg/rffmpeg.yml and replace the various attributes
+# with the values for your environment. For more details please see the README.
+
+rffmpeg:
+    state:
+        # Temporary directory to store state
+        tempdir: "/run/shm/rffmpeg"
+
+        # Filename format for state instance files, usually instance_[pid].pid
+        filename: "instance_{pid}.pid"
+
+        # Contents of the state instance file; usually just the active host
+        contents: "{host}"
+
+    remote:
+        # A YAML list of remote hosts to connect to
+        hosts:
+            - gpu1
+#            - gpu2
+#            - gpu3
+
+        # The remote SSH user to connect as
+        user: ffmpeg
+
+        # A YAML list of additional SSH arguments (e.g. private keys)
+        args: 
+            - ""
+
+    commands:
+        # A YAML list of prefixes to the ffmpeg command (e.g. sudo, nice, etc.)
+        pre:
+            - ""
+
+        # ffmpeg command binary
+        ffmpeg: "/usr/lib/jellyfin-ffmpeg/ffmpeg"
