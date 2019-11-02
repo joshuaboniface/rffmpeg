@@ -177,7 +177,7 @@ p = subprocess.run(rffmpeg_command,
                      universal_newlines=True,
                      stdin=sys.stdin,
                      stderr=sys.stderr,
-                     stdout=sys.stdout)
+                     stdout=sys.stderr)
 
 ###############################################################################
 # Cleanup
