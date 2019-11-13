@@ -198,4 +198,5 @@ p = subprocess.run(rffmpeg_command,
 # Cleanup
 ###############################################################################
 os.remove(our_statefile)
+debug("ffmpeg finished with code {}".format(p.returncode))
 exit(p.returncode)
