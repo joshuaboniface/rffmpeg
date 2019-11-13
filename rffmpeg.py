@@ -42,7 +42,7 @@ import yaml
 import subprocess
 
 def debug(msg):
-    sys.stderr.write(str(msg) + '\n')
+    sys.stdout.write(str(msg) + '\n')
 
 ###############################################################################
 # Configuration parsing
