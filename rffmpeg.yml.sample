@@ -15,6 +15,14 @@ rffmpeg:
         # Contents of the state instance file
         contents: "{host}"
 
+    # Logging configuration
+    logging:
+        # Enable or disable file logging
+        file: true
+
+        # Log messages to this file - ensure the user running rffmpeg can write to it
+        logfile: "/var/log/jellyfin/rffmpeg.log"
+
     # Remote (SSH) configuration
     remote:
         # A YAML list of remote hosts to connect to

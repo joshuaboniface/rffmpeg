@@ -40,9 +40,22 @@ import os
 import sys
 import yaml
 import subprocess
+from datetime import datetime
 
 def debug(msg):
+    log_to_file = False
+    logfile = ""
+    try:
+        log_to_file = config['log_to_file']
+        logfile  = config['logfile']
+    except:
+        pass
+
     sys.stdout.write(str(msg) + '\n')
+
+    if log_to_file and logfile:
+        with open(logfile, 'a') as logfhd:
+            logfhd.write(str(datetime.now()) + ' ' + str(msg) + '\n')
 
 ###############################################################################
 # Configuration parsing
@@ -70,6 +83,8 @@ try:
         'state_tempdir':   o_config['rffmpeg']['state']['tempdir'],
         'state_filename':  o_config['rffmpeg']['state']['filename'],
         'state_contents':  o_config['rffmpeg']['state']['contents'],
+        'log_to_file':     o_config['rffmpeg']['logging']['file'],
+        'logfile':         o_config['rffmpeg']['logging']['logfile'],
         'remote_hosts':    o_config['rffmpeg']['remote']['hosts'],
         'remote_user':     o_config['rffmpeg']['remote']['user'],
         'remote_args':     o_config['rffmpeg']['remote']['args'],
