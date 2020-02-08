@@ -38,20 +38,14 @@
 
 import os
 import sys
+import re
 import yaml
 import subprocess
 from datetime import datetime
 
 def debug(msg):
-    log_to_file = False
-    logfile = ""
-    try:
-        log_to_file = config['log_to_file']
-        logfile  = config['logfile']
-    except:
-        pass
-
-    sys.stdout.write(str(msg) + '\n')
+    log_to_file = config.get('log_to_file', False)
+    logfile  = config.get('logfile', False)
 
     if log_to_file and logfile:
         with open(logfile, 'a') as logfhd:
@@ -61,23 +55,18 @@ def debug(msg):
 # Configuration parsing
 ###############################################################################
 
-# Load config file
+# Get configuration file
 default_config_file = '/etc/rffmpeg/rffmpeg.yml'
-
-# Get alternative configuration file from environment
-try:
-    config_file = os.environ['RFFMPEG_CONFIG']
-except:
-    config_file = default_config_file
+config_file = os.environ.get('RFFMPEG_CONFIG', default_config_file)
 
 # Parse the configuration
-debug('Loading configuration from file "{}"'.format(config_file))
 with open(config_file, 'r') as cfgfile:
     try:
         o_config = yaml.load(cfgfile)
     except Exception as e:
-        debug('ERROR: Failed ot parse configuration file: {}'.format(e))
+        print('ERROR: Failed ot parse configuration file: {}'.format(e))
         exit(1)
+
 try:
     config = {
         'state_tempdir':   o_config['rffmpeg']['state']['tempdir'],
@@ -93,12 +82,17 @@ try:
         'ffprobe_command': o_config['rffmpeg']['commands']['ffprobe']
     }
 except Exception as e:
-    debug('ERROR: Failed to load configuration: {}'.format(e))
+    print('ERROR: Failed to load configuration: {}'.format(e))
     exit(1)
 
 # Parse CLI args (ffmpeg command line)
 all_args = sys.argv
 cli_ffmpeg_args = all_args[1:]
+
+# Get PID
+our_pid = os.getpid()
+
+debug("Starting rffmpeg {}: {}".format(our_pid, ' '.join(all_args)))
 
 ###############################################################################
 # State parsing and target determination
@@ -140,7 +134,7 @@ if not target_host:
     exit(1)
 
 # Set up our state file
-our_statefile = config['state_tempdir'] + '/' + config['state_filename'].format(pid=os.getpid())
+our_statefile = config['state_tempdir'] + '/' + config['state_filename'].format(pid=our_pid)
 with open(our_statefile, 'w') as statefile:
     statefile.write(config['state_contents'].format(host=target_host))
 
@@ -160,36 +154,38 @@ for arg in config['remote_args']:
 
 # Add user+host string
 rffmpeg_command.append('{}@{}'.format(config['remote_user'], target_host))
-debug("Running rffmpeg against {}@{}".format(config['remote_user'], target_host))
+debug("Running rffmpeg {} on {}@{}".format(our_pid, config['remote_user'], target_host))
 
 # Add any pre command
 for cmd in config['pre_commands']:
     if cmd:
         rffmpeg_command.append(cmd)
 
+# Prepare our default stdout (to stderr)
+stdout = sys.stderr
+
 # Verify if we're in ffmpeg or ffprobe mode
-if all_args[0] == 'ffprobe':
+if 'ffprobe' in all_args[0]:
     rffmpeg_command.append(config['ffprobe_command'])
+    stdout = sys.stdout
 else:
     rffmpeg_command.append(config['ffmpeg_command'])
 
-# Determine if "-version" is an argument; if so, we output stdout to stdout,
-# otherwise we output it to stderr
+# Determine if version, encorders, or decoders is an argument; if so, we output stdout to stdout
 # Weird workaround for something Jellyfin requires...
 if '-version' in cli_ffmpeg_args or '-encoders' in cli_ffmpeg_args or '-decoders' in cli_ffmpeg_args:
     stdout = sys.stdout
-else:
-    stdout = sys.stderr
 
-# Parse and re-quote the arguments
+# Parse and re-quote any problematic arguments
 for arg in cli_ffmpeg_args:
-    if arg[0] != '-':
+    # Match bad shell characters: * ( ) whitespace
+    if re.search('[*()\s]', arg):
         rffmpeg_command.append('"{}"'.format(arg))
     else:
         rffmpeg_command.append('{}'.format(arg))
 
 rffmpeg_cli = ' '.join(rffmpeg_command)
-debug("rffmpeg command line: {}".format(rffmpeg_cli))
+debug("Remote command for rffmpeg {}: {}".format(our_pid, rffmpeg_cli))
 
 ###############################################################################
 # Execute the remote command
@@ -206,5 +202,5 @@ p = subprocess.run(rffmpeg_command,
 # Cleanup
 ###############################################################################
 os.remove(our_statefile)
-debug("ffmpeg finished with code {}".format(p.returncode))
+debug("Finished rffmpeg {} with code {}".format(our_pid, p.returncode))
 exit(p.returncode)
