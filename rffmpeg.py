@@ -173,6 +173,14 @@ if all_args[0] == 'ffprobe':
 else:
     rffmpeg_command.append(config['ffmpeg_command'])
 
+# Determine if "-version" is an argument; if so, we output stdout to stdout,
+# otherwise we output it to stderr
+# Weird workaround for something Jellyfin requires...
+if '-version' in cli_ffmpeg_args:
+    stdout = sys.stdout
+else:
+    stdout = sys.stderr
+
 # Parse and re-quote the arguments
 for arg in cli_ffmpeg_args:
     if arg[0] != '-':
@@ -192,7 +200,7 @@ p = subprocess.run(rffmpeg_command,
                      universal_newlines=True,
                      stdin=sys.stdin,
                      stderr=sys.stderr,
-                     stdout=sys.stdout)
+                     stdout=stdout)
 
 ###############################################################################
 # Cleanup
