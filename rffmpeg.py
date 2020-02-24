@@ -160,8 +160,10 @@ for cmd in config['pre_commands']:
     if cmd:
         rffmpeg_command.append(cmd)
 
-# Prepare our default stdout (to stderr)
+# Prepare our default stdin/stdout/stderr (normally, stdout to stderr)
+stdin = sys.stdin
 stdout = sys.stderr
+stderr = sys.stderr
 
 # Verify if we're in ffmpeg or ffprobe mode
 if 'ffprobe' in all_args[0]:
@@ -193,8 +195,8 @@ p = subprocess.run(rffmpeg_command,
                      shell=False,
                      bufsize=0,
                      universal_newlines=True,
-                     stdin=sys.stdin,
-                     stderr=sys.stderr,
+                     stdin=stdin,
+                     stderr=stderr,
                      stdout=stdout)
 
 ###############################################################################
