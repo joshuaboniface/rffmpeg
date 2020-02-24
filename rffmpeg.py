@@ -146,7 +146,6 @@ rffmpeg_command = list()
 
 # Add SSH component
 rffmpeg_command.append('ssh')
-rffmpeg_command.append('-tt')
 rffmpeg_command.append('-q')
 for arg in config['remote_args']:
     if arg:
