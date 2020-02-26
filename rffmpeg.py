@@ -64,7 +64,7 @@ with open(config_file, 'r') as cfgfile:
     try:
         o_config = yaml.load(cfgfile)
     except Exception as e:
-        print('ERROR: Failed ot parse configuration file: {}'.format(e))
+        print('ERROR: Failed to parse configuration file: {}'.format(e))
         exit(1)
 
 try:
