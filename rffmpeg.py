@@ -2,7 +2,7 @@
 
 # rffmpeg.py - Remote FFMPEG transcoding for Jellyfin
 #
-#    Copyright (C) 2019  Joshua M. Boniface <joshua@boniface.me>
+#    Copyright (C) 2019-2020  Joshua M. Boniface <joshua@boniface.me>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ import yaml
 import subprocess
 from datetime import datetime
 
-def debug(msg):
+def logger(msg):
     log_to_file = config.get('log_to_file', False)
     logfile  = config.get('logfile', False)
 
@@ -64,7 +64,7 @@ with open(config_file, 'r') as cfgfile:
     try:
         o_config = yaml.load(cfgfile)
     except Exception as e:
-        print('ERROR: Failed to parse configuration file: {}'.format(e))
+        logger('ERROR: Failed to parse configuration file: {}'.format(e))
         exit(1)
 
 try:
@@ -82,7 +82,7 @@ try:
         'ffprobe_command': o_config['rffmpeg']['commands']['ffprobe']
     }
 except Exception as e:
-    print('ERROR: Failed to load configuration: {}'.format(e))
+    logger('ERROR: Failed to load configuration: {}'.format(e))
     exit(1)
 
 # Parse CLI args (ffmpeg command line)
@@ -92,7 +92,7 @@ cli_ffmpeg_args = all_args[1:]
 # Get PID
 our_pid = os.getpid()
 
-debug("Starting rffmpeg {}: {}".format(our_pid, ' '.join(all_args)))
+logger("Starting rffmpeg {}: {}".format(our_pid, ' '.join(all_args)))
 
 ###############################################################################
 # State parsing and target determination
@@ -130,7 +130,7 @@ for host in config['remote_hosts']:
         target_host = host
 
 if not target_host:
-    debug('ERROR: Failed to find a valid target host')
+    logger('ERROR: Failed to find a valid target host')
     exit(1)
 
 # Set up our state file
@@ -153,7 +153,7 @@ for arg in config['remote_args']:
 
 # Add user+host string
 rffmpeg_command.append('{}@{}'.format(config['remote_user'], target_host))
-debug("Running rffmpeg {} on {}@{}".format(our_pid, config['remote_user'], target_host))
+logger("Running rffmpeg {} on {}@{}".format(our_pid, config['remote_user'], target_host))
 
 # Add any pre command
 for cmd in config['pre_commands']:
@@ -186,7 +186,7 @@ for arg in cli_ffmpeg_args:
         rffmpeg_command.append('{}'.format(arg))
 
 rffmpeg_cli = ' '.join(rffmpeg_command)
-debug("Remote command for rffmpeg {}: {}".format(our_pid, rffmpeg_cli))
+logger("Remote command for rffmpeg {}: {}".format(our_pid, rffmpeg_cli))
 
 ###############################################################################
 # Execute the remote command
@@ -203,5 +203,5 @@ p = subprocess.run(rffmpeg_command,
 # Cleanup
 ###############################################################################
 os.remove(our_statefile)
-debug("Finished rffmpeg {} with code {}".format(our_pid, p.returncode))
+logger("Finished rffmpeg {} with code {}".format(our_pid, p.returncode))
 exit(p.returncode)
