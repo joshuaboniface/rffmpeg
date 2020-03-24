@@ -62,7 +62,7 @@ config_file = os.environ.get('RFFMPEG_CONFIG', default_config_file)
 # Parse the configuration
 with open(config_file, 'r') as cfgfile:
     try:
-        o_config = yaml.load(cfgfile)
+        o_config = yaml.load(cfgfile, Loader=yaml.BaseLoader)
     except Exception as e:
         logger('ERROR: Failed to parse configuration file: {}'.format(e))
         exit(1)
