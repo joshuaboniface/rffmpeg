@@ -28,6 +28,12 @@ rffmpeg supports setting multiple hosts. It keeps state in `/run/shm/rffmpeg`, o
 
 When running rffmpeg manually, *do not* exit it with `Ctrl+C`. Doing so will likely leave the `ffmpeg` process running on the remote machine. Instead, enter `q` and a newline ("Enter") into the rffmpeg process, and this will terminate the entire command cleanly. This is the method that Jellyfin uses to communicate the termination of an `ffmpeg` process.
 
+### Local fallback
+
+rffmpeg will fall back to a local copy of ffmpeg, at the same location as on remote systems (i.e. as configured in `/etc/rffmpeg/rffmpeg.yml`), should it be unable to find any working remote hosts. This helps prevent situations where rffmpeg cannot be run due to none of the remote host(s) being unavailable.
+
+If you want the local system to be included in the normal list, for instance if the local system is also a powerful transcode machine, you can add `localhost` to the list of hosts in order to have it be used along with the remote systems; it will SSH to itself but, if the guide below is followed exactly, will work as expected.
+
 ## Full setup guide
 
 This example setup is the one I use for `rffmpeg`, involving a media server (`jf1`) and a remote transcode server (`gpu1`). Both systems run Debian GNU/Linux, though the commands below should also work on Ubuntu. Note that Docker is not officially supported with `rffmpeg` due to the complexity of exporting Docker volumes with NFS, the path differences, and the fact that I don't use Docker, but if you do figure it out a PR is welcome.

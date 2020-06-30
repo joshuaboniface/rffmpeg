@@ -95,6 +95,47 @@ current_statefile = config['state_tempdir'] + '/' + config['state_filename'].for
 
 logger("Starting rffmpeg {}: {}".format(our_pid, ' '.join(all_args)))
 
+def local_ffmpeg_fallback():
+    """
+    Fallback call to local ffmpeg
+    """
+    rffmpeg_command = list()
+
+    # Prepare our default stdin/stdout/stderr (normally, stdout to stderr)
+    stdin = sys.stdin
+    stdout = sys.stderr
+    stderr = sys.stderr
+
+    # Verify if we're in ffmpeg or ffprobe mode
+    if 'ffprobe' in all_args[0]:
+        rffmpeg_command.append(config['ffprobe_command'])
+        stdout = sys.stdout
+    else:
+        rffmpeg_command.append(config['ffmpeg_command'])
+
+    # Determine if version, encorders, or decoders is an argument; if so, we output stdout to stdout
+    # Weird workaround for something Jellyfin requires...
+    if '-version' in cli_ffmpeg_args or '-encoders' in cli_ffmpeg_args or '-decoders' in cli_ffmpeg_args:
+        stdout = sys.stdout
+
+    # Parse and re-quote any problematic arguments
+    for arg in cli_ffmpeg_args:
+        rffmpeg_command.append('{}'.format(arg))
+
+    p = subprocess.run(rffmpeg_command,
+                     shell=False,
+                     bufsize=0,
+                     universal_newlines=True,
+                     stdin=stdin,
+                     stderr=stderr,
+                     stdout=stdout)
+    returncode = p.returncode
+
+    os.remove(current_statefile)
+
+    logger("Finished rffmpeg {} (local failover mode) with return code {}".format(our_pid, returncode))
+    exit(returncode)
+
 def get_target_host():
     """
     Determine the optimal target host
@@ -147,8 +188,8 @@ def get_target_host():
             target_host = host
 
     if not target_host:
-        logger('ERROR: Failed to find a valid target host')
-        exit(1)
+        logger('Failed to find a valid target host - using local fallback instead')
+        local_ffmpeg_fallback()
 
     # Write to our state file
     with open(current_statefile, 'a') as statefile:
