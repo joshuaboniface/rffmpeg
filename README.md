@@ -18,11 +18,15 @@ rffmpeg is a remote FFmpeg wrapper used to execute FFmpeg commands on a remote s
 
 1. Profit!
 
-## rffmpeg options
+## rffmpeg options and caveats
 
 ### Remote hosts
 
-rffmpeg supports setting multiple hosts. It keeps state in `/run/shm/rffmpeg`, of all running processes. These state files are used during rffmpeg's initialization in order to determine the optimal target host. rffmpeg will run through these hosts sequentially, choosing the one with the fewest running rffmpeg jobs. This helps distribute the transcoding load across multiple servers, and can also provide redundancy if one of the servers is offline (connect timeout is 1 second so the impact should be minimal).
+rffmpeg supports setting multiple hosts. It keeps state in `/run/shm/rffmpeg`, of all running processes. These state files are used during rffmpeg's initialization in order to determine the optimal target host. rffmpeg will run through these hosts sequentially, choosing the one with the fewest running rffmpeg jobs. This helps distribute the transcoding load across multiple servers, and can also provide redundancy if one of the servers is offline - rffmpeg will detect if a host is unreachable and set it "bad" for the remainder of the run, thus skipping it until the process completes.
+
+### Terminating rffmpeg
+
+When running rffmpeg manually, *do not* exit it with `Ctrl+C`. Doing so will likely leave the `ffmpeg` process running on the remote machine. Instead, enter `q` and a newline ("Enter") into the rffmpeg process, and this will terminate the entire command cleanly. This is the method that Jellyfin uses to communicate the termination of an `ffmpeg` process.
 
 ## Full setup guide
 
