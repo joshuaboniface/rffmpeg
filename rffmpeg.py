@@ -147,6 +147,13 @@ rffmpeg_command = list()
 # Add SSH component
 rffmpeg_command.append('ssh')
 rffmpeg_command.append('-q')
+
+# Set our connection timeouts, in case one of several remote machines is offline
+rffmpeg_command.append('-o')
+rffmpeg_command.append('ConnectTimeout=1')
+rffmpeg_command.append('-o')
+rffmpeg_command.append('ConnectionAttempts=1')
+
 for arg in config['remote_args']:
     if arg:
         rffmpeg_command.append(arg)
