@@ -28,15 +28,17 @@ rffmpeg supports setting multiple hosts. It keeps state in `/run/shm/rffmpeg`, o
 
 This example setup is the one I use for `rffmpeg`, involving a media server (`jf1`) and a remote transcode server (`gpu1`). Both systems run Debian GNU/Linux, though the commands below should also work on Ubuntu.
 
-1. Prepare the media server (`jf1`) with Jellyfin. Make note of the "Transcode path" in the Playback settings menu (e.g. `/var/lib/jellyfin/transcoding-temp`).
+1. Prepare the media server (`jf1`) with Jellyfin using the standard `.deb` install. Make note of main Jellyfin data path; it's usually `/var/lib/jellyfin` unless you change it. Note that if you change this path, or put the various subdirectories such as the `transcodes` or `data/subtitles` directories elsewhere, you may need to alter the NFS steps below to accommodate this. Note that Docker is not officially supported with `rffmpeg` due to the complexity of exporting Docker volumes with NFS, the path differences, and the fact that I don't use Docker, but if you do figure it out a PR is welcome.
 
-1. On the media server, create an SSH keypair owned by the Jellyfin service user; save this SSH key somewhere readable to the service user: `sudo -u jellyfin mkdir -p /var/lib/jellyfin/.ssh && sudo -u jellyfin ssh-keygen -t rsa -f /var/lib/jellyfin/.ssh/id_rsa`
+1. On the media server, create an SSH keypair owned by the Jellyfin service user; save this SSH key somewhere readable to the service user: `sudo -u jellyfin mkdir -p /var/lib/jellyfin/.ssh && sudo -u jellyfin ssh-keygen -t rsa -f /var/lib/jellyfin/.ssh/id_rsa`.
+
+1. Copy (or symlink) the new SSH public key created in the previous step to `authorized_keys`; this will be used later when the Jellyfin data directory is mounted on the transcode server: `sudo -u jellyfin cp -a /var/lib/jellyfin/.ssh/id_rsa.pub /var/lib/jellyfin/.ssh/authorized_keys`
 
 1. Install the rffmpeg program as detailed in the above section, including creating the `/etc/rffmpeg/rffmpeg.yml` configuration file and symlinks.
 
 1. Install the NFS kernel server: `sudo apt -y install nfs-kernel-server`
 
-1. Export the "Transcode path" directory found in step 1 with NFS; you will need to know the local IP address of the transcode server(s) (e.g. `10.0.0.100`) to lock this down; alternatively, use your entire local network range (e.g. `10.0.0.0/24`): `echo '/var/lib/jellyfin/transcoding-temp 10.0.0.100/32(rw,sync,no_subtree_check)' | sudo tee -a /etc/exports && sudo systemctl restart nfs-kernel-server`
+1. Export your Jellyfin data path found in step 1 with NFS; you will need to know the local IP address of the transcode server(s) (e.g. `10.0.0.100`) to lock this down; alternatively, use your entire local network range (e.g. `10.0.0.0/24`): `echo '/var/lib/jellyfin 10.0.0.100/32(rw,sync,no_subtree_check)' | sudo tee -a /etc/exports && sudo systemctl restart nfs-kernel-server`
 
 1. On the transcode server, install any required tools or programs to make use of hardware transcoding; this is optional if you only use software (i.e. CPU) transcoding.
 
@@ -46,11 +48,9 @@ This example setup is the one I use for `rffmpeg`, involving a media server (`jf
 
 1. Create a user for rffmpeg to SSH into the server as. This user should match the `jellyfin` user on the media server in every way, including UID (`id jellyfin` on the media server), home path, and groups.
 
-1. Install the SSH public key created in step 2 into the new user's home directory: `sudo -u jellyfin mkdir -p /var/lib/jellyfin/.ssh && echo 'ssh-rsa MyJellyfinUserPublicKey' | sudo -u jellyfin tee /var/lib/jellyfin/.ssh/authorized_keys`
+1. Ensure that the Jellyfin data directory exists at the same location as on the media server; create it if required, and set it immutable to prevent unintended writes: `sudo mkdir -p /var/lib/jellyfin && sudo chattr +i /var/lib/jellyfin`
 
-1. Ensure that the "Transcode path" directory exists at the same location as on the media server; create it if required: `sudo mkdir -p /var/lib/jellyfin/transcoding-temp`
-
-1. Mount the media server NFS transcode share at the transcode directory: `echo 'jf1:/var/lib/jellyfin/transcoding-temp /var/lib/jellyfin/transcoding-temp nfs defaults,vers=3,sync 0 0' | sudo tee -a /etc/fstab && sudo mount -a`
+1. Mount the media server NFS data share at the same directory on the transcode server: `echo 'jf1:/var/lib/jellyfin /var/lib/jellyfin nfs defaults,vers=3,sync 0 0' | sudo tee -a /etc/fstab && sudo mount -a`
 
 1. Mount your media directory on the transcode server at the same location as on the media server and using the same method; if your media is local to the media server, export it with NFS similarly to the transcode directory.
 
@@ -69,3 +69,5 @@ This example setup is the one I use for `rffmpeg`, involving a media server (`jf
     1. The FFmpeg process writes the output files to the NFS-mounted temporary transcoding directory.
 
     1. Jellyfin reads the output files from the NFS-exported temporary transcoding directory and plays back normally.
+
+1. `rffmpeg` will also be used during other tasks in Jellyfin that require `ffmpeg`, for instance image extraction during library scans and subtitle extraction.
