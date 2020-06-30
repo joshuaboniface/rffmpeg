@@ -30,7 +30,7 @@ When running rffmpeg manually, *do not* exit it with `Ctrl+C`. Doing so will lik
 
 ### Local fallback
 
-rffmpeg will fall back to a local copy of ffmpeg, at the same location as on remote systems (i.e. as configured in `/etc/rffmpeg/rffmpeg.yml`), should it be unable to find any working remote hosts. This helps prevent situations where rffmpeg cannot be run due to none of the remote host(s) being unavailable.
+rffmpeg will fall back to a local copy of ffmpeg, at the same location as on remote systems (i.e. as configured in `/etc/rffmpeg/rffmpeg.yml`), should it be unable to find any working remote hosts. This helps prevent situations where rffmpeg cannot be run due to none of the remote host(s) being unavailable. Note that, if hardware acceleraton is configured and is not available locally, this may still fail; there is no easy way around this.
 
 If you want the local system to be included in the normal list, for instance if the local system is also a powerful transcode machine, you can add `localhost` to the list of hosts in order to have it be used along with the remote systems; it will SSH to itself but, if the guide below is followed exactly, will work as expected.
 
