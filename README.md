@@ -58,7 +58,7 @@ This example setup is the one I use for `rffmpeg`, involving a media server (`jf
 
 1. Verify that rffmpeg itself works by calling its `ffmpeg` alias with the `-version` option: `sudo -u jellyfin /usr/local/bin/ffmpeg -version`
 
-1. In Jellyfin, set the rffmpeg binary, via its `ffmpeg` symlink, as your "FFmpeg path" in the Playback settings; optionally, enable any hardware encoding you configured in step 6.
+1. In Jellyfin, set the rffmpeg binary, via its `ffmpeg` symlink, as your "FFmpeg path" in the Playback settings; optionally, enable any hardware encoding you configured in step 7.
 
 1. Try running a transcode and verifying that the `rffmpeg` program works as expected. The flow should be:
 
