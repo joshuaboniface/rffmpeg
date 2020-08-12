@@ -311,14 +311,17 @@ while True:
 
     # A returncode of 255 means that the SSH process failed; ffmpeg does not throw this return code (https://ffmpeg.org/pipermail/ffmpeg-user/2013-July/016245.html)
     if returncode == 255:
-        logger("SSH failed to host {}: marking this host as bad and retrying".format(target_host))
+        logger("SSH failed to host {} with retcode {}: marking this host as bad and retrying".format(target_host, returncode))
         bad_host(target_host)
     else:
         # The SSH succeeded, so we can abort the loop
         break
 
 # Remove the current statefile
-os.remove(current_statefile)
+try:
+    os.remove(current_statefile)
+except FileNotFoundError:
+    pass
 
 logger("Finished rffmpeg {} with return code {}".format(our_pid, returncode))
 exit(returncode)
