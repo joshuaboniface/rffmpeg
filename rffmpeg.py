@@ -85,6 +85,10 @@ except Exception as e:
     logger('ERROR: Failed to load configuration: {}'.format(e))
     exit(1)
 
+# Handle the fallback configuration using get() to avoid failing
+config['fallback_ffmpeg_command'] = o_config['rffmpeg']['commands'].get('fallback_ffmpeg', config['ffmpeg_command'])
+config['fallback_ffprobe_command'] = o_config['rffmpeg']['commands'].get('fallback_ffprobe', config['ffprobe_command'])
+
 # Parse CLI args (ffmpeg command line)
 all_args = sys.argv
 cli_ffmpeg_args = all_args[1:]
@@ -108,10 +112,10 @@ def local_ffmpeg_fallback():
 
     # Verify if we're in ffmpeg or ffprobe mode
     if 'ffprobe' in all_args[0]:
-        rffmpeg_command.append(config['ffprobe_command'])
+        rffmpeg_command.append(config['fallback_ffprobe_command'])
         stdout = sys.stdout
     else:
-        rffmpeg_command.append(config['ffmpeg_command'])
+        rffmpeg_command.append(config['fallback_ffmpeg_command'])
 
     # Determine if version, encorders, or decoders is an argument; if so, we output stdout to stdout
     # Weird workaround for something Jellyfin requires...

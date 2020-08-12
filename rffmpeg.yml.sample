@@ -50,3 +50,7 @@ rffmpeg:
         # The (remote) ffmpeg and ffprobe command binary paths
         ffmpeg: "/usr/lib/jellyfin-ffmpeg/ffmpeg"
         ffprobe: "/usr/lib/jellyfin-ffmpeg/ffprobe"
+
+        # An optional local fallback ffmpeg and ffprobe, if you wish this to be different from the above paths
+        #fallback_ffmpeg: "/usr/lib/jellyfn-ffmpeg/ffmpeg"
+        #fallback_ffprobe: "/usr/lib/jellyfin-ffmpeg/ffprobe"
