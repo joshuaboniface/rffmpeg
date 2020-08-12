@@ -131,7 +131,10 @@ def local_ffmpeg_fallback():
                      stdout=stdout)
     returncode = p.returncode
 
-    os.remove(current_statefile)
+    try:
+        os.remove(current_statefile)
+    except FileNotFoundError:
+        pass
 
     logger("Finished rffmpeg {} (local failover mode) with return code {}".format(our_pid, returncode))
     exit(returncode)
@@ -187,13 +190,13 @@ def get_target_host():
             lowest_count = host_counts[host]
             target_host = host
 
-    if not target_host:
-        logger('Failed to find a valid target host - using local fallback instead')
-        local_ffmpeg_fallback()
-
     # Write to our state file
     with open(current_statefile, 'a') as statefile:
         statefile.write(config['state_contents'].format(host=target_host) + '\n')
+
+    if not target_host:
+        logger('Failed to find a valid target host - using local fallback instead')
+        local_ffmpeg_fallback()
 
     return target_host
 
