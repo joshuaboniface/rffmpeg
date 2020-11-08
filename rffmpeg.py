@@ -248,6 +248,15 @@ def setup_command(target_host):
     rffmpeg_command.append('{}@{}'.format(config['remote_user'], target_host))
     logger("Running rffmpeg {} on {}@{}".format(our_pid, config['remote_user'], target_host))
 
+    # Add EOSSH escape start
+    rffmpeg_command.append('-T')
+    rffmpeg_command.append('<<EOSSH')
+
+    # First part of EOSSH encapsulation
+    rffmpeg_cli = ' '.join(rffmpeg_command)
+    rffmpeg_cli += '\n'
+    rffmpeg_command = []
+
     # Add any pre command
     for cmd in config['pre_commands']:
         if cmd:
@@ -278,17 +287,22 @@ def setup_command(target_host):
         else:
             rffmpeg_command.append('{}'.format(arg))
 
-    return rffmpeg_command, stdin, stdout, stderr
+    # Inner/second part of EOSSH encapsulation
+    rffmpeg_cli += ' '.join(rffmpeg_command)
+
+    # Final part of EOSSH encapsulation
+    rffmpeg_cli += '\nEOSSH\n\n'
+
+    return rffmpeg_cli, stdin, stdout, stderr
 
 def prepare_command():
     logger("Preparing remote command")
 
     target_host = get_target_host()
-    rffmpeg_command, stdin, stdout, stderr = setup_command(target_host)
-    rffmpeg_cli = ' '.join(rffmpeg_command)
+    rffmpeg_cli, stdin, stdout, stderr = setup_command(target_host)
     logger("Remote command for rffmpeg {}: {}".format(our_pid, rffmpeg_cli))
 
-    return rffmpeg_command, target_host, stdin, stdout, stderr
+    return rffmpeg_cli, target_host, stdin, stdout, stderr
 
 def run_command(rffmpeg_command, stdin, stdout, stderr):
     """
@@ -297,7 +311,7 @@ def run_command(rffmpeg_command, stdin, stdout, stderr):
     logger("Running remote command")
 
     p = subprocess.run(rffmpeg_command,
-                         shell=False,
+                         shell=True,
                          bufsize=0,
                          universal_newlines=True,
                          stdin=stdin,
