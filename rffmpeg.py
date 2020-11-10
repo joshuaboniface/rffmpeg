@@ -274,10 +274,12 @@ def setup_command(target_host):
     else:
         rffmpeg_command.append(config['ffmpeg_command'])
 
-    # Determine if version, encorders, or decoders is an argument; if so, we output stdout to stdout
+    # Determine if version, encorders, decoders or hwaccels is an argument;
+    # if so, we output stdout to stdout
     # Weird workaround for something Jellyfin requires...
-    if '-version' in cli_ffmpeg_args or '-encoders' in cli_ffmpeg_args or '-decoders' in cli_ffmpeg_args:
-        stdout = sys.stdout
+    specials = ['-version', '-encoders', '-decoders', '-hwaccels']
+    if any(item in specials for item in cli_ffmpeg_args):
+       stdout = sys.stdout
 
     # Parse and re-quote any problematic arguments
     for arg in cli_ffmpeg_args:
