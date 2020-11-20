@@ -120,7 +120,8 @@ def local_ffmpeg_fallback():
 
     # Determine if version, encorders, or decoders is an argument; if so, we output stdout to stdout
     # Weird workaround for something Jellyfin requires...
-    if '-version' in cli_ffmpeg_args or '-encoders' in cli_ffmpeg_args or '-decoders' in cli_ffmpeg_args:
+    specials = ['-version', '-encoders', '-decoders', '-hwaccels']
+    if any(item in specials for item in cli_ffmpeg_args):
         stdout = sys.stdout
 
     # Parse and re-quote any problematic arguments
