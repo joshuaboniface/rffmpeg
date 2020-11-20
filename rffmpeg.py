@@ -41,6 +41,7 @@ import sys
 import re
 import yaml
 import subprocess
+import signal
 from datetime import datetime
 
 def logger(msg):
@@ -307,6 +308,17 @@ def run_command(rffmpeg_command, stdin, stdout, stderr):
 
     return returncode
 
+def cleanup(signum='', frame=''):
+    # Remove the current statefile
+    try:
+        os.remove(current_statefile)
+    except FileNotFoundError:
+        pass
+
+signal.signal(signal.SIGTERM, cleanup)
+signal.signal(signal.SIGINT, cleanup)
+signal.signal(signal.SIGQUIT, cleanup)
+signal.signal(signal.SIGHUP, cleanup)
 
 # Main process loop; executes until the ffmpeg command actually runs on a reachable host
 while True:
@@ -324,11 +336,6 @@ while True:
         # The SSH succeeded, so we can abort the loop
         break
 
-# Remove the current statefile
-try:
-    os.remove(current_statefile)
-except FileNotFoundError:
-    pass
-
+cleanup()
 logger("Finished rffmpeg {} with return code {}".format(our_pid, returncode))
 exit(returncode)
