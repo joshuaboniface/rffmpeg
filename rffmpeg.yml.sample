@@ -40,8 +40,6 @@ rffmpeg:
         args: 
             - "-i"
             - "/var/lib/jellyfin/id_rsa"
-            - "-o"
-            - "StrictHostKeyChecking=no"
 
 
     # Remote command configuration
