@@ -27,6 +27,7 @@ rffmpeg:
     remote:
         # A YAML list of remote hosts to connect to
         hosts:
+            - localhost
             - gpu1
 #            - gpu2
 #            - gpu3
@@ -39,6 +40,9 @@ rffmpeg:
         args: 
             - "-i"
             - "/var/lib/jellyfin/id_rsa"
+            - "-o"
+            - "StrictHostKeyChecking=no"
+
 
     # Remote command configuration
     commands:
