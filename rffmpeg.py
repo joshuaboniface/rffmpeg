@@ -325,7 +325,7 @@ def main():
         log.info("Starting process loop")
 
         target_host = get_target_host()
-        print("[rffmpeg] Running on {}".format(target_host))
+        log.info("[rffmpeg] Running on {}".format(target_host))
         if target_host == "localhost":
             returncode = run_local_ffmpeg()
             break
