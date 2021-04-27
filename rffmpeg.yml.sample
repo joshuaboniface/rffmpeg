@@ -25,12 +25,11 @@ rffmpeg:
 
     # Remote (SSH) configuration
     remote:
-        # A YAML list of remote hosts to connect to
+        # A YAML list of remote hosts to connect to; either direct list or name/weight supported
         hosts:
             - localhost
-            - gpu1
-#            - gpu2
-#            - gpu3
+            - name: gpu1
+              weight: 2   # Relative to any non-weighted hosts which have weight 1
 
         # The remote SSH user to connect as
         user: jellyfin

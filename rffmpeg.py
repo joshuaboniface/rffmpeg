@@ -124,38 +124,58 @@ def get_target_host():
                     log.info("Found running rffmpeg process %s against host '%s'", re.findall(r"[0-9]+", state_file)[0], line.split()[0])
 
     # Get the remote hosts list from the config
-    remote_hosts = config["remote_hosts"]
+    remote_hosts = list()
+    for host in config["remote_hosts"]:
+        if type(host) is str or host.get("name", None) is None:
+            host_name = host
+        else:
+            host_name = host.get("name")
+
+        if type(host) is str or host.get("weight", None) is None:
+            host_weight = 1
+
+        remote_hosts.append({ "name": host_name, "weight": host_weight, "count": 0, "weighted_count": 0, "bad": False })
+
 
     # Remove any bad hosts from the remote_hosts list
-    for host in bad_hosts:
-        if host in remote_hosts:
-            remote_hosts.remove(host)
+    for bhost in bad_hosts:
+        for rhost in remote_hosts:
+            if bhost == rhost["name"]:
+                remote_hosts[rhost]["bad"] = True
 
     # Find out which active hosts are in use
-    host_counts = dict()
-    for host in remote_hosts:
+    for idx, rhost in enumerate(remote_hosts):
         # Determine process counts in active_hosts
         count = 0
         for ahost in active_hosts:
-            if host == ahost:
+            if ahost == rhost["name"]:
                 count += 1
-        host_counts[host] = count
+        remote_hosts[idx]["count"] = count
 
-    # Select the host with the lowest count (first host is parsed last)
+    # Reweight the host counts by floor dividing count by weight
+    for idx, rhost in enumerate(remote_hosts):
+        if rhost["bad"]:
+            continue
+        if rhost["weight"] > 1:
+            remote_hosts[idx]["weighted_count"] = rhost["count"] // rhost["weight"]
+        else:
+            remote_hosts[idx]["weighted_count"] = rhost["count"]
+
+    # Select the host with the lowest weighted count (first host is parsed last)
     lowest_count = 999
     target_host = None
-    for host in remote_hosts:
-        if host_counts[host] < lowest_count:
-            lowest_count = host_counts[host]
-            target_host = host
-
-    # Write to our state file
-    with open(current_statefile, "a") as statefile:
-        statefile.write(config["state_contents"].format(host=target_host) + "\n")
+    for rhost in remote_hosts:
+        if rhost["weighted_count"] < lowest_count:
+            lowest_count = rhost["weighted_count"]
+            target_host = rhost["name"]
 
     if not target_host:
         log.warning("Failed to find a valid target host - using local fallback instead")
         target_host = "localhost"
+
+    # Write to our state file
+    with open(current_statefile, "a") as statefile:
+        statefile.write(config["state_contents"].format(host=target_host) + "\n")
 
     log.info("Selected target host '%s'", target_host)
     return target_host
