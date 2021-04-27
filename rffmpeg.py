@@ -96,41 +96,6 @@ current_statefile = config["state_tempdir"] + "/" + config["state_filename"].for
 log.info("Starting rffmpeg %s: %s", os.getpid(), " ".join(all_args))
 
 
-def run_local_ffmpeg():
-    """
-    Fallback call to local ffmpeg
-    """
-    rffmpeg_command = list()
-
-    # Prepare our default stdin/stdout/stderr (normally, stdout to stderr)
-    stdin = sys.stdin
-    stdout = sys.stderr
-    stderr = sys.stderr
-
-    # Verify if we're in ffmpeg or ffprobe mode
-    if "ffprobe" in all_args[0]:
-        rffmpeg_command.append(config["fallback_ffprobe_command"])
-        stdout = sys.stdout
-    else:
-        rffmpeg_command.append(config["fallback_ffmpeg_command"])
-
-    # Determine if version, encorders, or decoders is an argument; if so, we output stdout to stdout
-    # Weird workaround for something Jellyfin requires...
-    specials = ["-version", "-encoders", "-decoders", "-hwaccels"]
-    if any(item in specials for item in cli_ffmpeg_args):
-        stdout = sys.stdout
-
-    # Parse and re-quote any problematic arguments
-    for arg in cli_ffmpeg_args:
-        rffmpeg_command.append("{}".format(arg))
-
-    log.info("Local command for rffmpeg %s: %s", os.getpid(), " ".join(rffmpeg_command))
-
-    returncode = run_command(rffmpeg_command, stdin, stdout, stderr)
-    log.info("Finished local rffmpeg %s with return code %s", os.getpid(), returncode)
-    return returncode
-
-
 def get_target_host():
     """
     Determine the optimal target host
@@ -187,10 +152,10 @@ def get_target_host():
         statefile.write(config["state_contents"].format(host=target_host) + "\n")
 
     if not target_host:
-        log.error("Failed to find a valid target host - using local fallback instead")
+        log.warning("Failed to find a valid target host - using local fallback instead")
         target_host = "localhost"
 
-    log.info("Selected valid target host %s", target_host)
+    log.info("Selected target host '%s'", target_host)
     return target_host
 
 
@@ -213,40 +178,39 @@ def bad_host(target_host):
         statefile.write("badhost " + config["state_contents"].format(host=target_host) + "\n")
 
 
-def setup_command(target_host):
+def setup_remote_command(target_host):
     """
     Craft the target command
     """
-    log.info("Crafting remote command string")
-
-    rffmpeg_command = list()
+    rffmpeg_ssh_command = list()
+    rffmpeg_ffmpeg_command = list()
 
     # Add SSH component
-    rffmpeg_command.append("ssh")
-    rffmpeg_command.append("-q")
+    rffmpeg_ssh_command.append("ssh")
+    rffmpeg_ssh_command.append("-q")
 
     # Set our connection timeouts, in case one of several remote machines is offline
-    rffmpeg_command.append("-o")
-    rffmpeg_command.append("ConnectTimeout=1")
-    rffmpeg_command.append("-o")
-    rffmpeg_command.append("ConnectionAttempts=1")
-    rffmpeg_command.append("-o")
-    rffmpeg_command.append("StrictHostKeyChecking=no")
-    rffmpeg_command.append("-o")
-    rffmpeg_command.append("UserKnownHostsFile=/dev/null")
+    rffmpeg_ssh_command.append("-o")
+    rffmpeg_ssh_command.append("ConnectTimeout=1")
+    rffmpeg_ssh_command.append("-o")
+    rffmpeg_ssh_command.append("ConnectionAttempts=1")
+    rffmpeg_ssh_command.append("-o")
+    rffmpeg_ssh_command.append("StrictHostKeyChecking=no")
+    rffmpeg_ssh_command.append("-o")
+    rffmpeg_ssh_command.append("UserKnownHostsFile=/dev/null")
 
     for arg in config["remote_args"]:
         if arg:
-            rffmpeg_command.append(arg)
+            rffmpeg_ssh_command.append(arg)
 
     # Add user+host string
-    rffmpeg_command.append("{}@{}".format(config["remote_user"], target_host))
-    log.info("Running rffmpeg %s on %s@%s", os.getpid(), config["remote_user"], target_host)
+    rffmpeg_ssh_command.append("{}@{}".format(config["remote_user"], target_host))
+    log.info("Running as %s@%s", config["remote_user"], target_host)
 
     # Add any pre command
     for cmd in config["pre_commands"]:
         if cmd:
-            rffmpeg_command.append(cmd)
+            rffmpeg_ffmpeg_command.append(cmd)
 
     # Prepare our default stdin/stdout/stderr (normally, stdout to stderr)
     stdin = sys.stdin
@@ -255,10 +219,10 @@ def setup_command(target_host):
 
     # Verify if we're in ffmpeg or ffprobe mode
     if "ffprobe" in all_args[0]:
-        rffmpeg_command.append(config["ffprobe_command"])
+        rffmpeg_ffmpeg_command.append(config["ffprobe_command"])
         stdout = sys.stdout
     else:
-        rffmpeg_command.append(config["ffmpeg_command"])
+        rffmpeg_ffmpeg_command.append(config["ffmpeg_command"])
 
     # Determine if version, encorders, or decoders is an argument; if so, we output stdout to stdout
     # Weird workaround for something Jellyfin requires...
@@ -269,19 +233,18 @@ def setup_command(target_host):
     for arg in cli_ffmpeg_args:
         # Match bad shell characters: * ( ) whitespace
         if re.search("[*()\s|\[\]]", arg):
-            rffmpeg_command.append('"{}"'.format(arg))
+            rffmpeg_ffmpeg_command.append('"{}"'.format(arg))
         else:
-            rffmpeg_command.append("{}".format(arg))
+            rffmpeg_ffmpeg_command.append("{}".format(arg))
 
-    return rffmpeg_command, stdin, stdout, stderr
+    return rffmpeg_ssh_command, rffmpeg_ffmpeg_command, stdin, stdout, stderr
 
 
-def run_command(rffmpeg_command, stdin, stdout, stderr):
+def run_command(rffmpeg_ssh_command, rffmpeg_ffmpeg_command, stdin, stdout, stderr):
     """
-    Execute the remote command using subprocess
+    Execute the command using subprocess
     """
-    log.info("Running command %s", " ".join(rffmpeg_command))
-
+    rffmpeg_command = rffmpeg_ssh_command + rffmpeg_ffmpeg_command
     p = subprocess.run(
         rffmpeg_command, shell=False, bufsize=0, universal_newlines=True, stdin=stdin, stderr=stderr, stdout=stdout
     )
@@ -290,10 +253,44 @@ def run_command(rffmpeg_command, stdin, stdout, stderr):
     return returncode
 
 
+def run_local_ffmpeg():
+    """
+    Fallback call to local ffmpeg
+    """
+    rffmpeg_ffmpeg_command = list()
+
+    # Prepare our default stdin/stdout/stderr (normally, stdout to stderr)
+    stdin = sys.stdin
+    stdout = sys.stderr
+    stderr = sys.stderr
+
+    # Verify if we're in ffmpeg or ffprobe mode
+    if "ffprobe" in all_args[0]:
+        rffmpeg_ffmpeg_command.append(config["fallback_ffprobe_command"])
+        stdout = sys.stdout
+    else:
+        rffmpeg_ffmpeg_command.append(config["fallback_ffmpeg_command"])
+
+    # Determine if version, encorders, or decoders is an argument; if so, we output stdout to stdout
+    # Weird workaround for something Jellyfin requires...
+    specials = ["-version", "-encoders", "-decoders", "-hwaccels"]
+    if any(item in specials for item in cli_ffmpeg_args):
+        stdout = sys.stdout
+
+    # Parse and re-quote any problematic arguments
+    for arg in cli_ffmpeg_args:
+        rffmpeg_ffmpeg_command.append("{}".format(arg))
+
+    log.info("Local command: %s", " ".join(rffmpeg_ffmpeg_command))
+
+    return run_command([], rffmpeg_ffmpeg_command, stdin, stdout, stderr)
+
+
 def run_remote_ffmpeg(target_host):
-    rffmpeg_command, stdin, stdout, stderr = setup_command(target_host)
-    log.info("Remote command for rffmpeg %s: %s", os.getpid(), " ".join(rffmpeg_command))
-    return run_command(rffmpeg_command, stdin, stdout, stderr)
+    rffmpeg_ssh_command, rffmpeg_ffmpeg_command, stdin, stdout, stderr = setup_remote_command(target_host)
+    log.info("Remote command: %s '%s'", " ".join(rffmpeg_ssh_command), " ".join(rffmpeg_ffmpeg_command))
+
+    return run_command(rffmpeg_ssh_command, rffmpeg_ffmpeg_command, stdin, stdout, stderr)
 
 
 def cleanup(signum="", frame=""):
@@ -319,13 +316,12 @@ def main():
     else:
         logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
+    log.info("Starting rffmpeg PID %s", os.getpid())
+
     # Main process loop; executes until the ffmpeg command actually runs on a reachable host
     returncode = 1
     while True:
-        log.info("Starting process loop")
-
         target_host = get_target_host()
-        log.info("[rffmpeg] Running on {}".format(target_host))
         if target_host == "localhost":
             returncode = run_local_ffmpeg()
             break
@@ -346,7 +342,10 @@ def main():
                 break
 
     cleanup()
-    log.info("Finished rffmpeg %s with return code %s", os.getpid(), returncode)
+    if returncode == 0:
+        log.info("Finished rffmpeg PID %s with return code %s", os.getpid(), returncode)
+    else:
+        log.error("Finished rffmpeg PID %s with return code %s", os.getpid(), returncode)
     exit(returncode)
 
 
