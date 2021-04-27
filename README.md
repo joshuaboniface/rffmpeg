@@ -26,9 +26,11 @@ The `rffmpeg.yml.sample` is self-documented for the most part. Some additional i
 
 ### Remote hosts
 
-rffmpeg supports setting multiple hosts. It keeps state in `/run/shm/rffmpeg`, of all running processes. These state files are used during rffmpeg's initialization in order to determine the optimal target host. rffmpeg will run through these hosts sequentially, choosing the one with the fewest running rffmpeg jobs. This helps distribute the transcoding load across multiple servers, and can also provide redundancy if one of the servers is offline - rffmpeg will detect if a host is unreachable and set it "bad" for the remainder of the run, thus skipping it until the process completes.
+rffmpeg supports setting multiple hosts. It keeps state in `/run/shm/rffmpeg` of all running processes, and these state files are used during rffmpeg's initialization in order to determine the optimal target host. rffmpeg will run through these hosts sequentially, choosing the one with the fewest running rffmpeg jobs. This helps distribute the transcoding load across multiple servers, and can also provide redundancy if one of the servers is offline - rffmpeg will detect if a host is unreachable and set it "bad" for the remainder of the run, thus skipping it until the process completes.
 
-Hosts can also be assigned weights (see `rffmpeg.yml.sample` for an example) that allow the host to take on that many times the number of active processes versus weight-1 hosts.
+Hosts can also be assigned weights (see `rffmpeg.yml.sample` for an example) that allow the host to take on that many times the number of active processes versus weight-1 hosts. The `rffmpeg` process does a floor division of the number of active processes on a host with that host weight to determine its "weighted [process] count", which is then used instead to determine the lease-loaded host to use.
+
+Note that `rffmpeg` does not take into account actual system load, etc. when determining which host to use; it treats each running command equally regardless of how intensive it actually is.
 
 ### Localhost and fallback
 
