@@ -24,18 +24,21 @@ rffmpeg is a remote FFmpeg wrapper used to execute FFmpeg commands on a remote s
 
 rffmpeg supports setting multiple hosts. It keeps state in `/run/shm/rffmpeg`, of all running processes. These state files are used during rffmpeg's initialization in order to determine the optimal target host. rffmpeg will run through these hosts sequentially, choosing the one with the fewest running rffmpeg jobs. This helps distribute the transcoding load across multiple servers, and can also provide redundancy if one of the servers is offline - rffmpeg will detect if a host is unreachable and set it "bad" for the remainder of the run, thus skipping it until the process completes.
 
-### Local host
-If one of the hosts in the config file is called "localhost", rffmpeg will run locally without SSH. This can be usefull if you have a host which serves the frontend (IE Jellyfin) and is also able to transcode.
+Hosts can also be assigned weights (see `rffmpeg.yml.sample` for an example) that allow the host to take on that many times the number of active processes versus weight-1 hosts.
+
+### Localhost and fallback
+
+If one of the hosts in the config file is called "localhost", rffmpeg will run locally without SSH. This can be useful if the local machine is also a powerful transcoding device.
+
+In addition, rffmpeg will fall back to "localhost" should it be unable to find any working remote hosts. This helps prevent situations where rffmpeg cannot be run due to none of the remote host(s) being available.
+
+In both cases, note that, if hardware acceleraton is configured, it *must* be available on the local host as well, or the `ffmpeg` commands will fail. There is no easy way around this without rewriting flags, and this is currently out-of-scope for `rffmpeg`.
+
+The exact path to the local `ffmpeg` and `ffprobe` binaries can be overridden in the configuration, should their paths not match those of the remote system(s). If these options are not specified, the remote paths are used.
 
 ### Terminating rffmpeg
 
 When running rffmpeg manually, *do not* exit it with `Ctrl+C`. Doing so will likely leave the `ffmpeg` process running on the remote machine. Instead, enter `q` and a newline ("Enter") into the rffmpeg process, and this will terminate the entire command cleanly. This is the method that Jellyfin uses to communicate the termination of an `ffmpeg` process.
-
-### Local fallback
-
-rffmpeg will fall back to a local copy of ffmpeg, at the same location as on remote systems (i.e. as configured in `/etc/rffmpeg/rffmpeg.yml`), should it be unable to find any working remote hosts. This helps prevent situations where rffmpeg cannot be run due to none of the remote host(s) being unavailable. Note that, if hardware acceleraton is configured and is not available locally, this may still fail; there is no easy way around this.
-
-If you want the local system to be included in the normal list, for instance if the local system is also a powerful transcode machine, you can add `localhost` to the list of hosts in order to have it be used along with the remote systems; it will SSH to itself but, if the guide below is followed exactly, will work as expected.
 
 ## Full setup guide
 
