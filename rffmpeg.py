@@ -118,8 +118,10 @@ def get_target_host():
             for line in contents:
                 if re.match("^badhost", line):
                     bad_hosts.append(line.split()[1])
+                    log.info("Found bad host mark from rffmpeg process %s for host '%s'", re.findall(r"[0-9]+", state_file)[0], line.split()[1])
                 else:
                     active_hosts.append(line.split()[0])
+                    log.info("Found running rffmpeg process %s against host '%s'", re.findall(r"[0-9]+", state_file)[0], line.split()[0])
 
     # Get the remote hosts list from the config
     remote_hosts = config["remote_hosts"]
