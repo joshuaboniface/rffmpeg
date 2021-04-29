@@ -43,6 +43,10 @@ rffmpeg:
 
     # Remote command configuration
     commands:
+        # By default rffmpeg uses $PATH to find the "ssh" program; use this option to set a full path
+        # to an SSH binary if you want to override the default.
+        ssh: "ssh"
+
         # A YAML list of prefixes to the ffmpeg command (e.g. sudo, nice, etc.),
         # one line per space-separated command element.
         pre:

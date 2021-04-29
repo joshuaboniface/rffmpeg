@@ -74,6 +74,7 @@ try:
         "remote_hosts": o_config["rffmpeg"]["remote"]["hosts"],
         "remote_user": o_config["rffmpeg"]["remote"]["user"],
         "remote_args": o_config["rffmpeg"]["remote"]["args"],
+        "ssh_command": o_config["rffmpeg"]["commands"]["ssh"],
         "pre_commands": o_config["rffmpeg"]["commands"]["pre"],
         "ffmpeg_command": o_config["rffmpeg"]["commands"]["ffmpeg"],
         "ffprobe_command": o_config["rffmpeg"]["commands"]["ffprobe"],
@@ -208,7 +209,7 @@ def setup_remote_command(target_host):
     rffmpeg_ffmpeg_command = list()
 
     # Add SSH component
-    rffmpeg_ssh_command.append("ssh")
+    rffmpeg_ssh_command.append(config["ssh_command"])
     rffmpeg_ssh_command.append("-q")
 
     # Set our connection timeouts, in case one of several remote machines is offline
