@@ -140,9 +140,9 @@ def get_target_host():
 
     # Remove any bad hosts from the remote_hosts list
     for bhost in bad_hosts:
-        for rhost in remote_hosts:
+        for idx, rhost in enumerate(remote_hosts):
             if bhost == rhost["name"]:
-                remote_hosts[rhost]["bad"] = True
+                remote_hosts[idx]["bad"] = True
 
     # Find out which active hosts are in use
     for idx, rhost in enumerate(remote_hosts):
