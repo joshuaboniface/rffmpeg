@@ -79,7 +79,7 @@ try:
         "ffprobe_command": o_config["rffmpeg"]["commands"]["ffprobe"],
     }
 except Exception as e:
-    log.error("ERROR: Failed to load configuration: %s", e)
+    log.error("ERROR: Failed to load configuration: %s is missing", e)
     exit(1)
 
 # Handle the fallback configuration using get() to avoid failing
