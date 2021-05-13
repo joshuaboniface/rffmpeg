@@ -73,6 +73,7 @@ try:
         "logfile": o_config["rffmpeg"]["logging"]["logfile"],
         "remote_hosts": o_config["rffmpeg"]["remote"]["hosts"],
         "remote_user": o_config["rffmpeg"]["remote"]["user"],
+        "remote_persist": o_config["rffmpeg"]["remote"]["persist"],
         "remote_args": o_config["rffmpeg"]["remote"]["args"],
         "pre_commands": o_config["rffmpeg"]["commands"]["pre"],
         "ffmpeg_command": o_config["rffmpeg"]["commands"]["ffmpeg"],
@@ -213,14 +214,17 @@ def setup_remote_command(target_host):
     rffmpeg_ssh_command.append("-q")
 
     # Set our connection timeouts, in case one of several remote machines is offline
-    rffmpeg_ssh_command.append("-o")
-    rffmpeg_ssh_command.append("ConnectTimeout=1")
-    rffmpeg_ssh_command.append("-o")
-    rffmpeg_ssh_command.append("ConnectionAttempts=1")
-    rffmpeg_ssh_command.append("-o")
-    rffmpeg_ssh_command.append("StrictHostKeyChecking=no")
-    rffmpeg_ssh_command.append("-o")
-    rffmpeg_ssh_command.append("UserKnownHostsFile=/dev/null")
+    rffmpeg_ssh_command.extend([ "-o", "ConnectTimeout=1" ])
+    rffmpeg_ssh_command.extend([ "-o", "ConnectionAttempts=1" ])
+    rffmpeg_ssh_command.extend([ "-o", "StrictHostKeyChecking=no" ])
+    rffmpeg_ssh_command.extend([ "-o", "UserKnownHostsFile=/dev/null" ])
+
+    # Use SSH control persistence to keep sessions alive for subsequent commands
+    persist = config["remote_persist"]
+    if persist > 0:
+        rffmpeg_ssh_command.extend([ "-o", "ControlMaster=auto" ])
+        rffmpeg_ssh_command.extend([ "-o", "ControlPath=/tmp/persist-%r@%h:%p" ])
+        rffmpeg_ssh_command.extend([ "-o", "ControlPersist={}".format(persist) ])
 
     for arg in config["remote_args"]:
         if arg:
