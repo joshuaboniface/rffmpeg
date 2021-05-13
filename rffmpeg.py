@@ -73,7 +73,6 @@ try:
         "logfile": o_config["rffmpeg"]["logging"]["logfile"],
         "remote_hosts": o_config["rffmpeg"]["remote"]["hosts"],
         "remote_user": o_config["rffmpeg"]["remote"]["user"],
-        "remote_persist": o_config["rffmpeg"]["remote"]["persist"],
         "remote_args": o_config["rffmpeg"]["remote"]["args"],
         "pre_commands": o_config["rffmpeg"]["commands"]["pre"],
         "ffmpeg_command": o_config["rffmpeg"]["commands"]["ffmpeg"],
@@ -85,6 +84,7 @@ except Exception as e:
 
 # Handle the fallback configuration using get() to avoid failing
 config["ssh_command"] = o_config["rffmpeg"]["commands"].get("ssh", "ssh")
+config["remote_persist"] = o_config["rffmpeg"]["remote"].get("persist", 0)
 config["fallback_ffmpeg_command"] = o_config["rffmpeg"]["commands"].get("fallback_ffmpeg", config["ffmpeg_command"])
 config["fallback_ffprobe_command"] = o_config["rffmpeg"]["commands"].get("fallback_ffprobe", config["ffprobe_command"])
 
