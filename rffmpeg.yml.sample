@@ -35,7 +35,7 @@ rffmpeg:
         user: jellyfin
 
         # How long to persist SSH sessions (0 to disable)
-        persist: 120
+        persist: 300
 
         # A YAML list of additional SSH arguments (e.g. private keys),
         # one line per space-separated argument element.
