@@ -223,7 +223,7 @@ def setup_remote_command(target_host):
     persist = config["remote_persist"]
     if persist > 0:
         rffmpeg_ssh_command.extend([ "-o", "ControlMaster=auto" ])
-        rffmpeg_ssh_command.extend([ "-o", "ControlPath=/dev/shm/ssh-%r@%h:%p" ])
+        rffmpeg_ssh_command.extend([ "-o", "ControlPath=/run/shm/ssh-%r@%h:%p" ])
         rffmpeg_ssh_command.extend([ "-o", "ControlPersist={}".format(persist) ])
 
     for arg in config["remote_args"]:
