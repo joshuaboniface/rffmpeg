@@ -15,6 +15,9 @@ rffmpeg:
         # Contents of the state instance file
         contents: "{host}"
 
+        # Temporary directory to store SSH persistence sockets
+        persistdir: "/run/shm"
+
     # Logging configuration
     logging:
         # Enable or disable file logging

@@ -85,6 +85,7 @@ except Exception as e:
 # Handle the fallback configuration using get() to avoid failing
 config["ssh_command"] = o_config["rffmpeg"]["commands"].get("ssh", "ssh")
 config["remote_persist"] = int(o_config["rffmpeg"]["remote"].get("persist", 0))
+config["state_persistdir"] = o_config["rffmpeg"]["state"].get("persistdir", '/run/shm'))
 config["fallback_ffmpeg_command"] = o_config["rffmpeg"]["commands"].get("fallback_ffmpeg", config["ffmpeg_command"])
 config["fallback_ffprobe_command"] = o_config["rffmpeg"]["commands"].get("fallback_ffprobe", config["ffprobe_command"])
 
@@ -220,11 +221,11 @@ def setup_remote_command(target_host):
     rffmpeg_ssh_command.extend([ "-o", "UserKnownHostsFile=/dev/null" ])
 
     # Use SSH control persistence to keep sessions alive for subsequent commands
-    persist = config["remote_persist"]
-    if persist > 0:
+    persist_time = config["remote_persist_time"]
+    if persist_time > 0:
         rffmpeg_ssh_command.extend([ "-o", "ControlMaster=auto" ])
-        rffmpeg_ssh_command.extend([ "-o", "ControlPath=/run/shm/ssh-%r@%h:%p" ])
-        rffmpeg_ssh_command.extend([ "-o", "ControlPersist={}".format(persist) ])
+        rffmpeg_ssh_command.extend([ "-o", "ControlPath={}/ssh-%r@%h:%p".format(state_persistdir) ])
+        rffmpeg_ssh_command.extend([ "-o", "ControlPersist={}".format(persist_time) ])
 
     for arg in config["remote_args"]:
         if arg:
