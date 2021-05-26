@@ -85,7 +85,7 @@ except Exception as e:
 # Handle the fallback configuration using get() to avoid failing
 config["ssh_command"] = o_config["rffmpeg"]["commands"].get("ssh", "ssh")
 config["remote_persist"] = int(o_config["rffmpeg"]["remote"].get("persist", 0))
-config["state_persistdir"] = o_config["rffmpeg"]["state"].get("persistdir", '/run/shm'))
+config["state_persistdir"] = o_config["rffmpeg"]["state"].get("persistdir", '/run/shm')
 config["fallback_ffmpeg_command"] = o_config["rffmpeg"]["commands"].get("fallback_ffmpeg", config["ffmpeg_command"])
 config["fallback_ffprobe_command"] = o_config["rffmpeg"]["commands"].get("fallback_ffprobe", config["ffprobe_command"])
 
