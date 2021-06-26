@@ -168,6 +168,8 @@ def get_target_host():
     lowest_count = 999
     target_host = None
     for rhost in remote_hosts:
+        if rhost["bad"]:
+            continue
         if rhost["weighted_count"] < lowest_count:
             lowest_count = rhost["weighted_count"]
             target_host = rhost["name"]
