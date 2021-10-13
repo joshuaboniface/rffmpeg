@@ -136,6 +136,8 @@ def get_target_host():
 
         if type(host) is str or host.get("weight", None) is None:
             host_weight = 1
+        else:
+            host_weight = int(host.get("weight"))
 
         remote_hosts.append({ "name": host_name, "weight": host_weight, "count": 0, "weighted_count": 0, "bad": False })
 
