@@ -44,7 +44,7 @@ rffmpeg:
         # one line per space-separated argument element.
         args: 
             - "-i"
-            - "/var/lib/jellyfin/id_rsa"
+            - "/var/lib/jellyfin/.ssh/id_rsa"
 
 
     # Remote command configuration
