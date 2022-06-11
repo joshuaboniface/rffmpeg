@@ -45,7 +45,7 @@ The exact path to the local `ffmpeg` and `ffprobe` binaries can be overridden in
 ### Terminating rffmpeg
 
 When running rffmpeg manually, *do not* exit it with `Ctrl+C`. Doing so will likely leave the `ffmpeg` process running on the remote machine. Instead, enter `q` and a newline ("Enter") into the rffmpeg process, and this will terminate the entire command cleanly. This is the method that Jellyfin uses to communicate the termination of an `ffmpeg` process.
-`G
+
 ## Full setup guide
 
 This example setup is the one I use for `rffmpeg` with Jellyfin, involving a media server (`jf1`) and a remote transcode server (`gpu1`). Both systems run Debian GNU/Linux, though the commands below should also work on Ubuntu. Note that Docker is not officially supported with `rffmpeg` due to the complexity of exporting Docker volumes with NFS, the path differences, and the fact that I don't use Docker, but if you do figure it out a PR is welcome.
@@ -64,7 +64,7 @@ This example setup is the one I use for `rffmpeg` with Jellyfin, involving a med
 
 1. On the transcode server, install any required tools or programs to make use of hardware transcoding; this is optional if you only use software (i.e. CPU) transcoding.
 
-1. Install the `jellyfin-ffmpeg` package to provide an FFmpeg binary; follow the Jellyfin installation instructions for details on setting up the Jellyfin repository, though install only `jellyfin-ffmpeg`. While you can technically install any `ffmpeg` binary you wish, we recommend using Jellyfin's official `ffmpeg` for Jellyfin users to maximize compatibility.
+1. Install the `jellyfin-ffmpeg` package (with Jellyfin 10.8.0, `jellyfin-ffmpeg5` instead) to provide an FFmpeg binary; follow the Jellyfin installation instructions for details on setting up the Jellyfin repository, though install only `jellyfin-ffmpeg`. While you can technically install any `ffmpeg` binary you wish, we recommend using Jellyfin's official `ffmpeg` for Jellyfin users to maximize compatibility.
 
 1. Install the NFS client utilities: `sudo apt install -y nfs-common`
 
