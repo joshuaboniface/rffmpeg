@@ -100,7 +100,6 @@ This example setup is the one I use for `rffmpeg` with Jellyfin, involving a med
 
 If you are using NVEnv/NVDec, it's probably a good idea to symlink the `.nv` folder inside the Jellyfin user's homedir (i.e. `/var/lib/jellyfin/.nv`) to somewhere outside of the NFS volume on both sides. For example:
 
-    ```
     jf1  $ sudo mv /var/lib/jellyfin/.nv /var/lib/nvidia-cache
     jf1  $ sudo ln -s /var/lib/nvidia-cache /var/lib/jellyfin/.nv
     gpu1 $ sudo mkdir /var/lib/nvidia-cache
@@ -109,10 +108,9 @@ If you are using NVEnv/NVDec, it's probably a good idea to symlink the `.nv` fol
     [...]
     lrwxrwxrwx  1 root     root         17 Jun 11 15:51 .nv -> /var/lib/nvidia-cache
     [...]
-    ```
 
 Be sure to adjust these paths to match your Jellyfin setup. The name of the target doesn't matter too much, as long as `.nv` inside the homedir is symlinked to it and it is owned by the `jellyfin` service user.
 
 This is because some functions of FFMpeg's NVEnc/NVDec stack - specifically the `scale_cuda` and `tonemap_cuda` filters - leverage this directory to cache their JIT codes, and this can result in very slow startup times for FFMpeg on the remote side due to NFS locking issues. See https://developer.nvidia.com/blog/cuda-pro-tip-understand-fat-binaries-jit-caching/ for further information.
 
-Alternatively, you can simplify the NFS mount to only export and mount the directories that are actually required to pass transcoded data back (at the least, `transcodes` and `data/subtitles`) over NFS, and leave the rest of the directory local to the remote host, but this likely isn't required with this workaround and makes setup more complex. Feel free to experiment and find the best solution for your setup.
+Alternatively, you can simplify the NFS mount to only export and mount the directories that are actually required to pass transcoded data back (at the least, `transcodes` and `data/subtitles`) over NFS, and leave the rest of the directory local to the remote host, but this likely isn't required with this workaround and makes setup more complex. Based on that link, you might also be able to experiment with the environment variables that control the JIT caching. Feel free to experiment and find the best solution for your setup.
