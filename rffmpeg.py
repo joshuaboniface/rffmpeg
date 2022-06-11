@@ -258,7 +258,8 @@ def setup_remote_command(target_host):
 
     # Determine if version, encorders, or decoders is an argument; if so, we output stdout to stdout
     # Weird workaround for something Jellyfin requires...
-    if "-version" in cli_ffmpeg_args or "-encoders" in cli_ffmpeg_args or "-decoders" in cli_ffmpeg_args:
+    specials = ["-version", "-encoders", "-decoders", "-hwaccels", "-h"]
+    if any(item in specials for item in cli_ffmpeg_args):
         stdout = sys.stdout
 
     # Parse and re-quote any problematic arguments
@@ -305,7 +306,7 @@ def run_local_ffmpeg():
 
     # Determine if version, encorders, or decoders is an argument; if so, we output stdout to stdout
     # Weird workaround for something Jellyfin requires...
-    specials = ["-version", "-encoders", "-decoders", "-hwaccels"]
+    specials = ["-version", "-encoders", "-decoders", "-hwaccels", "-h"]
     if any(item in specials for item in cli_ffmpeg_args):
         stdout = sys.stdout
 
