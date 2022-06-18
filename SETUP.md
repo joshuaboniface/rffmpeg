@@ -25,39 +25,51 @@ This guide is provided as a basic starting point - there are myriad possible com
 
 1. Make note of the Jellyfin service user's details, specifically the UID and any groups (and GIDs) it is a member of; this will be needed later on.
 
-    jellyfin1 $ id jellyfin
-    uid=110(jellyfin) gid=117(jellyfin) groups=117(jellyfin)
+   ```
+   jellyfin1 $ id jellyfin
+   uid=110(jellyfin) gid=117(jellyfin) groups=117(jellyfin)
+   ```
 
 1. Create an SSH keypair to use for `rffmpeg`'s login to the remote server. For ease of use with the following steps, use the Jellyfin service user (`jellyfin`) to create the keypair and store it under its home directory (the Jellyfin data path above). I use `rsa` here but you can substitute `ed25519` instead (avoid `dsa` and `ecdsa` for reasons I won't get into here). Once done, copy the public key to `authorized_keys` which will be used to authenticate the key later.
-
-    jellyfin1 $ sudo -u jellyfin mkdir ${jellyfin_data_path}/.ssh
-    jellyfin1 $ export keytype="rsa"
-    jellyfin1 $ sudo -u jellyfin ssh-keygen -t ${keytype} -f ${jellyfin_data_path}/.ssh/id_${keytype}
-    jellyfin1 $ sudo -u jellyfin cp -a ${jellyfin_data_path}/.ssh/id_${keytype}.pub ${jellyfin_data_path}/.ssh/authorized_keys
+ 
+   ```
+   jellyfin1 $ sudo -u jellyfin mkdir ${jellyfin_data_path}/.ssh
+   jellyfin1 $ export keytype="rsa"
+   jellyfin1 $ sudo -u jellyfin ssh-keygen -t ${keytype} -f ${jellyfin_data_path}/.ssh/id_${keytype}
+   jellyfin1 $ sudo -u jellyfin cp -a ${jellyfin_data_path}/.ssh/id_${keytype}.pub ${jellyfin_data_path}/.ssh/authorized_keys
+   ```
 
 1. Scan and save the SSH host key of the transcode server(s), to avoid a prompt later:
 
-    jellyfin1 $ ssh-keyscan transcode1 >> ${jellyfin_data_path}/.ssh/known_hosts
+   ```
+   jellyfin1 $ ssh-keyscan transcode1 >> ${jellyfin_data_path}/.ssh/known_hosts
+   ```
 
    * **NOTE:** Ensure you use the exact name here that you will use in `rffmpeg.yml` in the next step. If this is an FQDN (e.g. `jellyfin1.mydomain.tld`) or an IP (e.g. `192.168.0.101`) instead of a short name, use that instead in this command, or repeat it for every possible option (it doesn't hurt).
 
 1. Install the `rffmpeg` utility. First, create a directory for the configuration at `/etc/rffmpeg`, copy `rffmpeg.yml.sample` to `/etc/rffmpeg/rffmpeg.yml` and edit it to suit your needs. Then install the actual `rffmpeg.py` binary somewhere (I recommend `/usr/local/bin`). Finally, create symlinks so that the names `ffmpeg` and `ffprobe` map to the `rffmpeg.py` binary.
 
-    jellyfin1 $ git clone https://github.com/joshuaboniface/rffmpeg  # or download the files manually
-    jellyfin1 $ sudo mkdir -p /etc/rffmpeg
-    jellyfin1 $ sudo cp rffmpeg/rffmpeg.yml.sample /etc/rffmpeg/rffmpeg.yml
-    jellyfin1 $ sudo $EDITOR /etc/rffmpeg/rffmpeg.yml  # edit it to suit your needs
-    jellyfin1 $ sudo cp rffmpeg/rffmpeg.py /usr/local/bin/rffmpeg.py
-    jellyfin1 $ sudo ln -s /usr/local/bin/rffmpeg.py /usr/local/bin/ffmpeg
-    jellyfin1 $ sudo ln -s /usr/local/bin/rffmpeg.py /usr/local/bin/ffprobe
+   ```
+   jellyfin1 $ git clone https://github.com/joshuaboniface/rffmpeg  # or download the files manually
+   jellyfin1 $ sudo mkdir -p /etc/rffmpeg
+   jellyfin1 $ sudo cp rffmpeg/rffmpeg.yml.sample /etc/rffmpeg/rffmpeg.yml
+   jellyfin1 $ sudo $EDITOR /etc/rffmpeg/rffmpeg.yml  # edit it to suit your needs
+   jellyfin1 $ sudo cp rffmpeg/rffmpeg.py /usr/local/bin/rffmpeg.py
+   jellyfin1 $ sudo ln -s /usr/local/bin/rffmpeg.py /usr/local/bin/ffmpeg
+   jellyfin1 $ sudo ln -s /usr/local/bin/rffmpeg.py /usr/local/bin/ffprobe
+   ```
 
 1. Install the required dependencies of `rffmpeg`:
 
-    jellyfin1 $ sudo apt -y install python3-yaml python3-subprocess
+   ```
+   jellyfin1 $ sudo apt -y install python3-yaml python3-subprocess
+   ```
 
 1. Install the NFS kernel server. We will use NFS to export the various required directories so the transcode machine can read from and write to them.
 
-    jellyfin1 $ sudo apt -y install nfs-kernel-server
+   ```
+   jellyfin1 $ sudo apt -y install nfs-kernel-server
+   ```
 
 1. Create an `/etc/exports` configuration. What to put here can vary a lot, but here are some important points:
 
@@ -69,20 +81,24 @@ This guide is provided as a basic starting point - there are myriad possible com
 
    An example `/etc/exports` file would look like this:
 
-    # /etc/exports: the access control list for filesystems which may be exported
-    #               to NFS clients.  See exports(5).
-    #
-    # Other examples removed
+   ```
+   # /etc/exports: the access control list for filesystems which may be exported
+   #               to NFS clients.  See exports(5).
+   #
+   # Other examples removed
 
-    # jellyfin_data_path   first host                                                  second host, etc.
-    /var/lib/jellyfin      192.168.0.101/32(rw,sync,no_subtree_check,no_root_squash)   192.168.0.102(rw,sync,no_subtree_check,no_root_squash) 
+   # jellyfin_data_path   first host                                                  second host, etc.
+   /var/lib/jellyfin      192.168.0.101/32(rw,sync,no_subtree_check,no_root_squash)   192.168.0.102(rw,sync,no_subtree_check,no_root_squash) 
+   ```
 
 1. Reload the exports file and ensure the NFS server is properly exporting it now:
 
-    jellyfin1 $ sudo exportfs -arfv
-    jellyfin1 $ sudo exportfs
-    /var/lib/jellyfin   192.168.0.101/32
-    /var/lib/jellyfin   192.168.0.102/32
+   ```
+   jellyfin1 $ sudo exportfs -arfv
+   jellyfin1 $ sudo exportfs
+   /var/lib/jellyfin   192.168.0.101/32
+   /var/lib/jellyfin   192.168.0.102/32
+   ```
 
 ## Set up the transcode server (`transcode1`)
 
@@ -94,12 +110,16 @@ This guide is provided as a basic starting point - there are myriad possible com
 
 1. Install the NFS client utilities:
 
-    transcode1 $ sudo apt install -y nfs-common
+   ```
+   transcode1 $ sudo apt install -y nfs-common
+   ```
 
 1. Create the Jellyfin service user and its default group; ensure you use the exact same UID and GID values you found in the beginning of the last section and adjust the example here to match yours:
 
-    transcode1 $ sudo groupadd --gid 117 jellyfin
-    transcode1 $ sudo useradd --uid 110 --gid jellyfin --shell /bin/bash --no-create-home --home-dir ${jellyfin_data_path} jellyfin
+   ```
+   transcode1 $ sudo groupadd --gid 117 jellyfin
+   transcode1 $ sudo useradd --uid 110 --gid jellyfin --shell /bin/bash --no-create-home --home-dir ${jellyfin_data_path} jellyfin
+   ```
 
    * **NOTE:** For some hardware acceleration, you might need to add this user to additional groups. For example `--groups video,render`.
 
@@ -107,8 +127,10 @@ This guide is provided as a basic starting point - there are myriad possible com
 
 1. Create the Jellyfin data directory at the same location as on the media server, and set it immutable so that it won't be written to if the NFS mount goes down:
 
-    transcode1 $ sudo mkdir ${jellyfin_data_path}
-    transcode1 $ sudo chattr +i ${jellyfin_data_path}
+   ```
+   transcode1 $ sudo mkdir ${jellyfin_data_path}
+   transcode1 $ sudo chattr +i ${jellyfin_data_path}
+   ```
 
   Don't worry about permissions here; the mount will set those.
 
@@ -116,30 +138,36 @@ This guide is provided as a basic starting point - there are myriad possible com
 
    * Use the traditional `/etc/fstab` by adding a new entry like so, replacing the paths and hostname as required, and then mounting it:
 
-     transcode1 $ echo "jellyfin1:${jellyfin_data_path} ${jellyfin_data_path} nfs defaults,vers=3,sync" | sudo tee -a /etc/fstab
-     transcode1 $ sudo mount ${jellyfin_data_path}
+   ```
+   transcode1 $ echo "jellyfin1:${jellyfin_data_path} ${jellyfin_data_path} nfs defaults,vers=3,sync" | sudo tee -a /etc/fstab
+   transcode1 $ sudo mount ${jellyfin_data_path}
+   ```
 
    * Use a SystemD `mount` unit, which is a newer way of doing mounts with SystemD. I personally prefer this method as I find it easier to set up automatically, but this is up to preference. An example based on mine would be:
 
-     transcode1 $ cat /etc/systemd/system/var-lib-jellyfin.mount
-     [Unit]
-     Description = NFS volume for Jellyfin data directory
-     Requires = network-online.target
-     After = network-online.target
+   ```
+   transcode1 $ cat /etc/systemd/system/var-lib-jellyfin.mount
+   [Unit]
+   Description = NFS volume for Jellyfin data directory
+   Requires = network-online.target
+   After = network-online.target
 
-     [Mount]
-     type = nfs
-     What = jellyfin1:/var/lib/jellyfin
-     Where = /var/lib/jellyfin
-     Options = _netdev,sync,vers=3
+   [Mount]
+   type = nfs
+   What = jellyfin1:/var/lib/jellyfin
+   Where = /var/lib/jellyfin
+   Options = _netdev,sync,vers=3
 
-     [Install]
-     WantedBy = remote-fs.target
+   [Install]
+   WantedBy = remote-fs.target
+   ```
 
   Once the unit file is created, you can then reload the unit list and mount it:
 
-    transcode1 $ sudo systemctl daemon-reload
-    transcode1 $ sudo systemctl start var-lib-jellyfin.mount
+   ```
+   transcode1 $ sudo systemctl daemon-reload
+   transcode1 $ sudo systemctl start var-lib-jellyfin.mount
+   ```
 
   Note that mount units are fairly "new" and can be a bit finicky, be sure to read the SystemD documentation if you get stuck! Generally for new users, I'd recommend the `/etc/fstab` method instead.
 
@@ -149,21 +177,25 @@ This guide is provided as a basic starting point - there are myriad possible com
 
 1. On the media server, verify that SSH as the Jellyfin service user is working as expected to each transcoding server:
 
-    jellyfin1 $ sudo -u jellyfin ssh -i ${jellyfin_data_path}/.ssh/id_rsa jellyfin@transcode1 uname -a
-    Linux transcode1 [...]
+   ```
+   jellyfin1 $ sudo -u jellyfin ssh -i ${jellyfin_data_path}/.ssh/id_rsa jellyfin@transcode1 uname -a
+   Linux transcode1 [...]
+   ```
 
   If you get a prompt, then you missed the step in the first section about scanning for host keys; just save it and it will work fine from here.
 
 1. Validate that `rffmpeg` itself is working by calling its `ffmpeg` and `ffprobe` aliases with the `-version` option:
 
-    jellyfin1 $ sudo -u jellyfin /usr/local/bin/ffmpeg -version
-    ffmpeg version 5.0.1-Jellyfin Copyright (c) 2000-2022 the FFmpeg developers
-    built with gcc 10 (Debian 10.2.1-6)
-    [...]
-    jellyfin1 $ sudo -u jellyfin /usr/local/bin/ffprobe -version
-    ffprobe version 5.0.1-Jellyfin Copyright (c) 2007-2022 the FFmpeg developers
-    built with gcc 10 (Debian 10.2.1-6)
-    [...]
+   ```
+   jellyfin1 $ sudo -u jellyfin /usr/local/bin/ffmpeg -version
+   ffmpeg version 5.0.1-Jellyfin Copyright (c) 2000-2022 the FFmpeg developers
+   built with gcc 10 (Debian 10.2.1-6)
+   [...]
+   jellyfin1 $ sudo -u jellyfin /usr/local/bin/ffprobe -version
+   ffprobe version 5.0.1-Jellyfin Copyright (c) 2007-2022 the FFmpeg developers
+   built with gcc 10 (Debian 10.2.1-6)
+   [...]
+   ```
 
 As long as these steps work, all further steps should as well.
 
@@ -183,14 +215,16 @@ As long as these steps work, all further steps should as well.
 
 If you are using NVEnv/NVDec, it's probably a good idea to symlink the `.nv` folder inside the Jellyfin user's homedir (i.e. `/var/lib/jellyfin/.nv`) to somewhere outside of the NFS volume on both sides. For example:
 
-    jellyfin1  $ sudo mv /var/lib/jellyfin/.nv /var/lib/nvidia-cache
-    jellyfin1  $ sudo ln -s /var/lib/nvidia-cache /var/lib/jellyfin/.nv
-    transcode1 $ sudo mkdir /var/lib/nvidia-cache
-    transcode1 $ sudo chown jellyfin /var/lib/nvidia-cache
-    transcode1 $ ls -alh /var/lib/jellyfin
-    [...]
-    lrwxrwxrwx  1 root     root         17 Jun 11 15:51 .nv -> /var/lib/nvidia-cache
-    [...]
+   ```
+   jellyfin1  $ sudo mv /var/lib/jellyfin/.nv /var/lib/nvidia-cache
+   jellyfin1  $ sudo ln -s /var/lib/nvidia-cache /var/lib/jellyfin/.nv
+   transcode1 $ sudo mkdir /var/lib/nvidia-cache
+   transcode1 $ sudo chown jellyfin /var/lib/nvidia-cache
+   transcode1 $ ls -alh /var/lib/jellyfin
+   [...]
+   lrwxrwxrwx  1 root     root         17 Jun 11 15:51 .nv -> /var/lib/nvidia-cache
+   [...]
+   ```
 
 Be sure to adjust these paths to match your Jellyfin setup. The name of the target doesn't matter too much, as long as `.nv` inside the homedir is symlinked to it and it is owned by the `jellyfin` service user.
 
