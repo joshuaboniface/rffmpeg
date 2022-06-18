@@ -34,6 +34,7 @@ This guide is provided as a basic starting point - there are myriad possible com
  
    ```
    jellyfin1 $ sudo -u jellyfin mkdir ${jellyfin_data_path}/.ssh
+   jellyfin1 $ sudo chmod 700 ${jellyfin_data_path}/.ssh
    jellyfin1 $ export keytype="rsa"
    jellyfin1 $ sudo -u jellyfin ssh-keygen -t ${keytype} -f ${jellyfin_data_path}/.ssh/id_${keytype}
    jellyfin1 $ sudo -u jellyfin cp -a ${jellyfin_data_path}/.ssh/id_${keytype}.pub ${jellyfin_data_path}/.ssh/authorized_keys
