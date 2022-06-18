@@ -124,7 +124,7 @@ This guide is provided as a basic starting point - there are myriad possible com
 
    * **NOTE:** For some hardware acceleration, you might need to add this user to additional groups. For example `--groups video,render`.
 
-   * **NOTE:** The UID and GIDs here are dynamic; on the `jellyfin1` machine, they would have been created at install time with the next available ID in the range 100-199 (at least in Debian/Ubuntu). However, this means that the exact UID of your Jellyfin service user might not be available on your transcode, depending on what packages are installed and in what order. If there is a conflict, you must adjust user IDs on one side or the other so that they match on both machines. You can use `sudo usermod` to change a user's ID if required.
+   * **NOTE:** The UID and GIDs here are dynamic; on the `jellyfin1` machine, they would have been created at install time with the next available ID in the range 100-199 (at least in Debian/Ubuntu). However, this means that the exact UID of your Jellyfin service user might not be available on your transcode server, depending on what packages are installed and in what order. If there is a conflict, you must adjust user IDs on one side or the other so that they match on both machines. You can use `sudo usermod` to change a user's ID if required.
 
 1. Create the Jellyfin data directory at the same location as on the media server, and set it immutable so that it won't be written to if the NFS mount goes down:
 
@@ -133,7 +133,7 @@ This guide is provided as a basic starting point - there are myriad possible com
    transcode1 $ sudo chattr +i ${jellyfin_data_path}
    ```
 
-  Don't worry about permissions here; the mount will set those.
+   * Don't worry about permissions here; the mount will set those.
 
 1. Create the NFS client mount. There are two main ways to do this:
 
@@ -163,14 +163,14 @@ This guide is provided as a basic starting point - there are myriad possible com
    WantedBy = remote-fs.target
    ```
 
-  Once the unit file is created, you can then reload the unit list and mount it:
+   Once the unit file is created, you can then reload the unit list and mount it:
 
    ```
    transcode1 $ sudo systemctl daemon-reload
    transcode1 $ sudo systemctl start var-lib-jellyfin.mount
    ```
 
-  Note that mount units are fairly "new" and can be a bit finicky, be sure to read the SystemD documentation if you get stuck! Generally for new users, I'd recommend the `/etc/fstab` method instead.
+   Note that mount units are fairly "new" and can be a bit finicky, be sure to read the SystemD documentation if you get stuck! Generally for new users, I'd recommend the `/etc/fstab` method instead.
 
 1. Mount your media directories in the same location(s) as on the media server. If you exported them via NFS from your media server, use the process above only for those directories instead.
 
@@ -182,8 +182,6 @@ This guide is provided as a basic starting point - there are myriad possible com
    jellyfin1 $ sudo -u jellyfin ssh -i ${jellyfin_data_path}/.ssh/id_rsa jellyfin@transcode1 uname -a
    Linux transcode1 [...]
    ```
-
-  If you get a prompt, then you missed the step in the first section about scanning for host keys; just save it and it will work fine from here.
 
 1. Validate that `rffmpeg` itself is working by calling its `ffmpeg` and `ffprobe` aliases with the `-version` option:
 
@@ -217,7 +215,7 @@ As long as these steps work, all further steps should as well.
 If you are using NVEnv/NVDec, it's probably a good idea to symlink the `.nv` folder inside the Jellyfin user's homedir (i.e. `/var/lib/jellyfin/.nv`) to somewhere outside of the NFS volume on both sides. For example:
 
    ```
-   jellyfin1  $ sudo mv /var/lib/jellyfin/.nv /var/lib/nvidia-cache
+   jellyfin1  $ sudo mv /var/lib/jellyfin/.nv /var/lib/nvidia-cache || sudo -u jellyfin mkdir /var/lib/nvidia-cache
    jellyfin1  $ sudo ln -s /var/lib/nvidia-cache /var/lib/jellyfin/.nv
    transcode1 $ sudo mkdir /var/lib/nvidia-cache
    transcode1 $ sudo chown jellyfin /var/lib/nvidia-cache
