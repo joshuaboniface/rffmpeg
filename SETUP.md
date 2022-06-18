@@ -6,7 +6,7 @@ This guide is provided as a basic starting point - there are myriad possible com
 
 ## Set up the media server (`jellyfin1`)
 
-1. Install Jellyfin (or similar FFMPEG-using media server) on your machine. The recommended method here is native OS packages (`.deb` via `apt` or manual install, or `.rpm`) and not Docker as that adds significant complexity to the setup.
+1. Install Jellyfin (or similar FFMPEG-using media server) on your machine. This guide assumes you're using native `.deb` packages.
 
 1. Make note of the Jellyfin data path; this will be needed later on. By default when using native OS packages, this is `/var/lib/jellyfin`. If you choose to move this directory, do so now (I personally use `/srv/jellyfin` but this guide will assume the default).
 
