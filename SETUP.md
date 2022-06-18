@@ -8,6 +8,13 @@ This guide is provided as a basic starting point - there are myriad possible com
 
 1. Install Jellyfin (or similar FFMPEG-using media server) on your machine. This guide assumes you're using native `.deb` packages.
 
+1. Make note of the Jellyfin service user's details, specifically the UID and any groups (and GIDs) it is a member of; this will be needed later on.
+
+   ```
+   jellyfin1 $ id jellyfin
+   uid=110(jellyfin) gid=117(jellyfin) groups=117(jellyfin)
+   ```
+
 1. Make note of the Jellyfin data path; this will be needed later on. By default when using native OS packages, this is `/var/lib/jellyfin`. If you choose to move this directory, do so now (I personally use `/srv/jellyfin` but this guide will assume the default).
 
    To make life easier below, you can store this in a variable that I will reference frequently later:
@@ -22,13 +29,6 @@ This guide is provided as a basic starting point - there are myriad possible com
    * `transcodes/`: used to store on-the-fly transcoding files, and configurable separately in Jellyfin but with `rffmpeg` I recommend leaving it at the default location under the data path.
    * `data/subtitles/`: used to store on-the-fly extracted subtitles so that they can be reused later.
    * `.ssh/`: This doesn't exist yet but will after the next step.
-
-1. Make note of the Jellyfin service user's details, specifically the UID and any groups (and GIDs) it is a member of; this will be needed later on.
-
-   ```
-   jellyfin1 $ id jellyfin
-   uid=110(jellyfin) gid=117(jellyfin) groups=117(jellyfin)
-   ```
 
 1. Create an SSH keypair to use for `rffmpeg`'s login to the remote server. For ease of use with the following steps, use the Jellyfin service user (`jellyfin`) to create the keypair and store it under its home directory (the Jellyfin data path above). I use `rsa` here but you can substitute `ed25519` instead (avoid `dsa` and `ecdsa` for reasons I won't get into here). Once done, copy the public key to `authorized_keys` which will be used to authenticate the key later.
  
