@@ -17,9 +17,9 @@ This guide is provided as a basic starting point - there are myriad possible com
 
    The important subdirectories for `rffmpeg`'s operation are:
 
- * `transcodes/`: used to store on-the-fly transcoding files, and configurable separately in Jellyfin but with rffmpeg I recommend leaving it at the default location under the data path.
- * `data/subtitles/`: used to store on-the-fly extracted subtitles so that they can be reused later.
- * `.ssh/`: This doesn't exist yet but will after the next step.
+  * `transcodes/`: used to store on-the-fly transcoding files, and configurable separately in Jellyfin but with rffmpeg I recommend leaving it at the default location under the data path.
+  * `data/subtitles/`: used to store on-the-fly extracted subtitles so that they can be reused later.
+  * `.ssh/`: This doesn't exist yet but will after the next step.
 
 1. Make note of the Jellyfin service user's details, specifically the UID and any groups (and GIDs) it is a member of; this will be needed later on.
 
@@ -37,7 +37,7 @@ This guide is provided as a basic starting point - there are myriad possible com
 
     jellyfin1 $ ssh-keyscan transcode1 >> ${jellyfin_data_path}/.ssh/known_hosts
 
- * **NOTE:** Ensure you use the exact name here that you will use in `rffmpeg.yml` in the next step. If this is an FQDN (e.g. `jellyfin1.mydomain.tld`) or an IP (e.g. `192.168.0.101`) instead of a short name, use that instead in this command, or repeat it for every possible option (it doesn't hurt).
+  * **NOTE:** Ensure you use the exact name here that you will use in `rffmpeg.yml` in the next step. If this is an FQDN (e.g. `jellyfin1.mydomain.tld`) or an IP (e.g. `192.168.0.101`) instead of a short name, use that instead in this command, or repeat it for every possible option (it doesn't hurt).
 
 1. Install the `rffmpeg` utility. First, create a directory for the configuration at `/etc/rffmpeg`, copy `rffmpeg.yml.sample` to `/etc/rffmpeg/rffmpeg.yml` and edit it to suit your needs. Then install the actual `rffmpeg.py` binary somewhere (I recommend `/usr/local/bin`). Finally, create symlinks so that the names `ffmpeg` and `ffprobe` map to the `rffmpeg.py` binary.
 
@@ -59,11 +59,11 @@ This guide is provided as a basic starting point - there are myriad possible com
 
 1. Create an `/etc/exports` configuration. What to put here can vary a lot, but here are some important points:
 
- * Always export the `${jellyfin_data_path}` in full. Advanced users might be able to export the required subdirectories individually, but I find this to be not worth the hassle.
- * Note the security options of NFS. It will limit mounts to the IP addresses specified. If your home network is secure, you can use the entire network, e.g. `192.168.0.0/24`, but I would recommend determining the exact IP of your transcode server(s) and use them explicitly, e.g. for this example `192.168.0.101` and `192.168.0.102`.
- * The `sync` option is very important here. Jellyfin (and presumably Emby) determines that the next chunk is ready by waiting on inotifies in this directory (I think). Thus, we'd want the client to always do an `fsync` call after every write or the server might miss chunks which results in poor playback performance.
- * For the above reason, it's also very important that you export *from* the Jellyfin server and not from the transcode server.
- * If your media is local to the Jellyfin server (and not otherwise mounted via a remote filesystems like NFS, Samba, CephFS, etc.), also add an export for it as well.
+  * Always export the `${jellyfin_data_path}` in full. Advanced users might be able to export the required subdirectories individually, but I find this to be not worth the hassle.
+  * Note the security options of NFS. It will limit mounts to the IP addresses specified. If your home network is secure, you can use the entire network, e.g. `192.168.0.0/24`, but I would recommend determining the exact IP of your transcode server(s) and use them explicitly, e.g. for this example `192.168.0.101` and `192.168.0.102`.
+  * The `sync` option is very important here. Jellyfin (and presumably Emby) determines that the next chunk is ready by waiting on inotifies in this directory (I think). Thus, we'd want the client to always do an `fsync` call after every write or the server might miss chunks which results in poor playback performance.
+  * For the above reason, it's also very important that you export *from* the Jellyfin server and not from the transcode server.
+  * If your media is local to the Jellyfin server (and not otherwise mounted via a remote filesystems like NFS, Samba, CephFS, etc.), also add an export for it as well.
 
    An example `/etc/exports` file would look like this:
 
@@ -86,7 +86,7 @@ This guide is provided as a basic starting point - there are myriad possible com
 
 1. Install and configure anything you need for hardware transcoding, if applicable. For example GPU drivers if using a GPU for transcoding.
 
- * **NOTE:** Make sure you understand the caveats of using hardware transcoding with `rffmpeg` from the main README if you do decide to go this route.
+  * **NOTE:** Make sure you understand the caveats of using hardware transcoding with `rffmpeg` from the main README if you do decide to go this route.
 
 1. Install the `jellyfin-ffmpeg` (Jellyfin <= 10.7.7) or `jellyfin-ffmpeg5` (Jellyfin >= 10.8.0) package; follow the same steps as you would to install Jellyfin on the media server, only don't install `jellyfin` (and `jellyfin-server`/`jellyfin-web`) itself, just `jellyfin-ffmpeg[5]`.
 
@@ -99,9 +99,9 @@ This guide is provided as a basic starting point - there are myriad possible com
     transcode1 $ sudo groupadd --gid 117 jellyfin
     transcode1 $ sudo useradd --uid 110 --gid jellyfin --shell /bin/bash --no-create-home --home-dir ${jellyfin_data_path} jellyfin
 
- * **NOTE:** For some hardware acceleration, you might need to add this user to additional groups. For example `--groups video,render`.
+  * **NOTE:** For some hardware acceleration, you might need to add this user to additional groups. For example `--groups video,render`.
 
- * **NOTE:** The UID and GIDs here are dynamic; on the `jellyfin1` machine, they would have been created at install time with the next available ID in the range 100-199 (at least in Debian/Ubuntu). However, this means that the exact UID of your Jellyfin service user might not be available on your transcode, depending on what packages are installed and in what order. If there is a conflict, you must adjust user IDs on one side or the other so that they match on both machines. You can use `sudo usermod` to change a user's ID if required.
+  * **NOTE:** The UID and GIDs here are dynamic; on the `jellyfin1` machine, they would have been created at install time with the next available ID in the range 100-199 (at least in Debian/Ubuntu). However, this means that the exact UID of your Jellyfin service user might not be available on your transcode, depending on what packages are installed and in what order. If there is a conflict, you must adjust user IDs on one side or the other so that they match on both machines. You can use `sudo usermod` to change a user's ID if required.
 
 1. Create the Jellyfin data directory at the same location as on the media server, and set it immutable so that it won't be written to if the NFS mount goes down:
 
@@ -112,12 +112,12 @@ This guide is provided as a basic starting point - there are myriad possible com
 
 1. Create the NFS client mount. There are two main ways to do this:
 
- * Use the traditional `/etc/fstab` by adding a new entry like so, replacing the paths and hostname as required, and then mounting it:
+  * Use the traditional `/etc/fstab` by adding a new entry like so, replacing the paths and hostname as required, and then mounting it:
 
      transcode1 $ echo "jellyfin1:${jellyfin_data_path} ${jellyfin_data_path} nfs defaults,vers=3,sync" | sudo tee -a /etc/fstab
      transcode1 $ sudo mount ${jellyfin_data_path}
 
- * Use a SystemD `mount` unit, which is a newer way of doing mounts with SystemD. I personally prefer this method as I find it easier to set up automatically, but this is up to preference. An example based on mine would be:
+  * Use a SystemD `mount` unit, which is a newer way of doing mounts with SystemD. I personally prefer this method as I find it easier to set up automatically, but this is up to preference. An example based on mine would be:
 
      transcode1 $ cat /etc/systemd/system/var-lib-jellyfin.mount
      [Unit]
