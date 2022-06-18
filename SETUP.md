@@ -43,7 +43,7 @@ This guide is provided as a basic starting point - there are myriad possible com
 1. Scan and save the SSH host key of the transcode server(s), to avoid a prompt later:
 
    ```
-   jellyfin1 $ ssh-keyscan transcode1 >> ${jellyfin_data_path}/.ssh/known_hosts
+   jellyfin1 $ ssh-keyscan transcode1 | sudo -u jellyfin tee -a ${jellyfin_data_path}/.ssh/known_hosts
    ```
 
    * **NOTE:** Ensure you use the exact name here that you will use in `rffmpeg.yml` in the next step. If this is an FQDN (e.g. `jellyfin1.mydomain.tld`) or an IP (e.g. `192.168.0.101`) instead of a short name, use that instead in this command, or repeat it for every possible option (it doesn't hurt).
