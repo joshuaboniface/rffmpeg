@@ -1,6 +1,6 @@
 # rffmpeg
 
-rffmpeg is a remote FFmpeg wrapper used to execute FFmpeg commands on a remote server via SSH. It is most useful in situations involving media servers such as Jellyfin (our reference user), where one might want to perform transcoding actions with FFmpeg on a remote machine or set of machines which can better handle transcoding, take advantage of hardware acceleration, or distribute transcodes across multiple servers for load balancing.
+`rffmpeg` is a remote FFmpeg wrapper used to execute FFmpeg commands on a remote server via SSH. It is most useful in situations involving media servers such as Jellyfin (our reference user), where one might want to perform transcoding actions with FFmpeg on a remote machine or set of machines which can better handle transcoding, take advantage of hardware acceleration, or distribute transcodes across multiple servers for load balancing.
 
 ## Quick usage
 
@@ -18,7 +18,7 @@ rffmpeg is a remote FFmpeg wrapper used to execute FFmpeg commands on a remote s
 
 1. Profit!
 
-For a more detailed setup guide, see [the SETUP guide](SETUP.md).
+For more detailed instructions, including what must be done to ensure data can be passed between the servers, please see [the SETUP guide](SETUP.md).
 
 ## rffmpeg options and caveats
 
