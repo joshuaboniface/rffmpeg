@@ -18,7 +18,7 @@ rffmpeg is a remote FFmpeg wrapper used to execute FFmpeg commands on a remote s
 
 1. Profit!
 
-For a more detailed setup guide, see the section "Full setup guide" below.
+For a more detailed setup guide, see [the SETUP guide](SETUP.md).
 
 ## rffmpeg options and caveats
 
@@ -46,71 +46,56 @@ The exact path to the local `ffmpeg` and `ffprobe` binaries can be overridden in
 
 When running rffmpeg manually, *do not* exit it with `Ctrl+C`. Doing so will likely leave the `ffmpeg` process running on the remote machine. Instead, enter `q` and a newline ("Enter") into the rffmpeg process, and this will terminate the entire command cleanly. This is the method that Jellyfin uses to communicate the termination of an `ffmpeg` process.
 
-## Full setup guide
+## FAQ
 
-This example setup is the one I use for `rffmpeg` with Jellyfin, involving a media server (`jf1`) and a remote transcode server (`gpu1`). Both systems run Debian GNU/Linux, though the commands below should also work on Ubuntu. Note that Docker is not officially supported with `rffmpeg` due to the complexity of exporting Docker volumes with NFS, the path differences, and the fact that I don't use Docker, but if you do figure it out a PR is welcome.
+### Why did you make rffmpeg?
 
-1. Prepare the media server (`jf1`) with Jellyfin using the standard `.deb` install. Make note of the main Jellyfin data path, usually `/var/lib/jellyfin` unless you change it. Note that if you change this path, or put the various subdirectories such as the `transcodes` or `data/subtitles` directories elsewhere, you may need to alter the NFS steps below to accommodate this.
+My virtualization setup (multiple 1U nodes with lots of live migration/failover) didn't lend itself well to passing a GPU into my Jellyfin VM, but I wanted to offload transcoding because doing 4K HEVC transcodes with a CPU performs horribly. I happened to have another machine (my "base" remote headless desktop/gaming server) which had a GPU, so I wanted to find a way to offload the transcoding to it. I came up with `rffmpeg` as a simple wrapper to the `ffmpeg` and `ffprobe` calls that Jellyfin (and Emby, and likely other media servers too) makes which would run them on that host instead. After finding it quite useful myself, I released it publicaly as GPLv3 software so that others may benefit as well!
 
-1. On the media server, create an SSH keypair owned by the Jellyfin service user; save this SSH key somewhere readable to the service user: `sudo -u jellyfin mkdir -p -m 0700 /var/lib/jellyfin/.ssh && sudo -u jellyfin ssh-keygen -t rsa -f /var/lib/jellyfin/.ssh/id_rsa`.
+### What supports `rffmpeg`?
 
-1. Copy (or symlink) the new SSH public key created in the previous step to `authorized_keys`; this will be used later when the Jellyfin data directory is mounted on the transcode server: `sudo -u jellyfin cp -a /var/lib/jellyfin/.ssh/id_rsa.pub /var/lib/jellyfin/.ssh/authorized_keys`
+This depends on what "layer" you're asking at.
 
-1. Install the rffmpeg program as detailed in the "Quick usage" section above, including creating the `/etc/rffmpeg/rffmpeg.yml` configuration file and symlinks.
+* Media Servers: Jellyfin is officially supported; Emby seems to work fine, with caveats (see [Issue #10](https://github.com/joshuaboniface/rffmpeg/issues/10)); no others have been tested to my knowledge
+* Operating Systems (source): Debian and its derivatives (Ubuntu, Linux Mint, etc.) should all work perfectly; other Linux operating systems should work fine too as the principles are the same; MacOS should work since it has an SSH client built in; Windows might work if it has an SSH client installed
+* Operating Systems (target): Any Linux system which [`jellyfin-ffmpeg`](https://github.com/jellyfin/jellyfin-ffmpeg) supports, which is currently just Debian and Ubuntu; Windows *might* work if you can get an SSH server running on it (see [Issue #17](https://github.com/joshuaboniface/rffmpeg/issues/17))
+* Install Methods for Jellyfin: Native packages/installers/archives are recommended; Docker containers can be made to work by exporting the `/config` path (see [the setup guide](SETUP.md)) but this is slightly more difficult and is not explicitly covered in the guide
+* Install Methods for `rffmpeg`: Direct installation is recommended; a [Docker container to act as an ffmpeg transcode target](https://github.com/BasixKOR/rffmpeg-docker) has been created by @BasixKOR
 
-1. Install the NFS kernel server: `sudo apt -y install nfs-kernel-server`
+### Can `rffmpeg` mangle/alter FFMPEG arguments?
 
-1. Export your Jellyfin data path found in step 1 with NFS; you will need to know the local IP address of the transcode server(s) (e.g. `10.0.0.100`) to lock this down; alternatively, use your entire local network range (e.g. `10.0.0.0/24`), though this is not recommended for security reasons: `echo '/var/lib/jellyfin 10.0.0.100/32(rw,sync,no_subtree_check)' | sudo tee -a /etc/exports && sudo systemctl restart nfs-kernel-server`
+Explicitly *no*. `rffmpeg` is not designed to interact with the arguments that the media server passes to `ffmpeg`/`ffprobe` at all, nor will it. This is an explicit design decision due to the massive complexity of FFMpeg - to do this, I would need to create a mapping of just about every possible FFMpeg argument, what it means, and when to turn it on or off, which is way out of scope.
 
-1. On the transcode server, install any required tools or programs to make use of hardware transcoding; this is optional if you only use software (i.e. CPU) transcoding.
+This has a number of side effects:
 
-1. Install the `jellyfin-ffmpeg` package (with Jellyfin 10.8.0, `jellyfin-ffmpeg5` instead) to provide an FFmpeg binary; follow the Jellyfin installation instructions for details on setting up the Jellyfin repository, though install only `jellyfin-ffmpeg`. While you can technically install any `ffmpeg` binary you wish, we recommend using Jellyfin's official `ffmpeg` for Jellyfin users to maximize compatibility.
+ * `rffmpeg` does not know whether hardware acceleration is turned on or not (see above caveats about localhost and fallback)
+ * `rffmpeg` does not know what media is playing or where it's outputting files to, and cannot alter these paths
+ * `rffmpeg` cannot turn on or off special `ffmpeg` options depending on the host selected
 
-1. Install the NFS client utilities: `sudo apt install -y nfs-common`
+### Can `rffmpeg` do Wake-On-LAN or other similar options to turn on a transcode server?
 
-1. Create a user for rffmpeg to SSH into the server as. This user should match the `jellyfin` user on the media server in every way, including UID (`id jellyfin` on the media server), home path, and groups.
+Right now, no. I've thought about implementing this more than once (most recently, in response to [Issue #21](https://github.com/joshuaboniface/rffmpeg/issues/21)) but ultimately I've never though this was worth the complexity and delays in spwaning that it would add to the tool. That issue does provide one example of a workaround wrapper script that could accomplish this, but I don't see it being a part of the actual tool itself.
 
-1. Ensure that the Jellyfin data directory exists at the same location as on the media server; create it if required, and set it immutable to prevent unintended writes: `sudo mkdir -p /var/lib/jellyfin && sudo chattr +i /var/lib/jellyfin`
+### I'm getting an error, help!
 
-1. Mount the media server NFS data share at the same directory on the transcode server: `echo 'jf1:/var/lib/jellyfin /var/lib/jellyfin nfs defaults,vers=3,sync 0 0' | sudo tee -a /etc/fstab && sudo mount -a`
+First, run though the setup guide again and make sure that everything is set up correctly.
 
-1. Mount your media directory on the transcode server at the same location as on the media server and using the same method; if your media is local to the media server, export it with NFS in addition to the data directory.
+If the problem persists, please check the [closed issues](https://github.com/joshuaboniface/rffmpeg/issues?q=is%3Aissue+sort%3Aupdated-desc+is%3Aclosed) and see if it's been reported before (if it's regarding Emby and you get an "error 127", see [Issue #10](https://github.com/joshuaboniface/rffmpeg/issues/10)).
 
-1. On the media server, attempt to SSH to the transcode server as the `jellyfin` user using the key from step 2; this both tests the connection as well as saves the transcode server SSH host key locally: `sudo -u jellyfin ssh -i /var/lib/jellyfin/.ssh/id_rsa jellyfin@gpu1`
+If it hasn't, please open a new issue. Ensure you:
 
-1. Repeat the above step for any additional host(s), if applicable.
+1. Use a descriptive and useful title that quickly explains the problem.
 
-1. Verify that rffmpeg itself works by calling its `ffmpeg` alias as the service user with the `-version` option: `sudo -u jellyfin /usr/local/bin/ffmpeg -version`
+1. Clearly explain in the body of the issue your setup, what is going wrong, and what you expect should be happening. Don't fret if English isn't your first language or anything like that, as long as you are trying to be clear that's what counts!
 
-1. In Jellyfin, set the rffmpeg binary, via its `ffmpeg` symlink, as your "FFmpeg path" in the Playback settings; optionally, enable any hardware encoding you configured in step 7.
+1. Include your `rffmpeg.log` and Jellyfin/Emby `ffmpeg-transcode-*.txt` logs.
 
-1. Try running a transcode and verifying that the `rffmpeg` program works as expected by checking the log file specified in the `rffmpeg.yml` configuration. The flow should be:
+I will probably ask clarifying questions as required; please be prepared to run test commands, etc. as requested and paste the output.
 
-    1. Jellyfin calls rffmpeg with the expected arguments.
+### I found a bug/flaw and fixed or, or made a feature improvement; can I share it?
 
-    1. FFmpeg begins running on the transcode server.
+Absolutely - I'm happy to take pull requests. Though please refer to the "Can `rffmpeg` mangle/alter FFMPEG arguments?" entry above; unless it's really good work with a very explicitly defined limitation, I probably don't want to go down that route, but I'm more than willing to look at what you've done and consider it on its merits.
 
-    1. The FFmpeg process writes the output files to the NFS-mounted temporary transcoding directory.
+### Can you help me set up my server?
 
-    1. Jellyfin reads the output files from the NFS-exported temporary transcoding directory and plays back normally.
-
-1. `rffmpeg` will also be used during other tasks in Jellyfin that require `ffmpeg`, for instance image extraction during library scans and subtitle extraction.
-
-### NOTE for NVEnv/NVDec HWA
-
-If you are using NVEnv/NVDec, it's probably a good idea to symlink the `.nv` folder inside the Jellyfin user's homedir (i.e. `/var/lib/jellyfin/.nv`) to somewhere outside of the NFS volume on both sides. For example:
-
-    jf1  $ sudo mv /var/lib/jellyfin/.nv /var/lib/nvidia-cache
-    jf1  $ sudo ln -s /var/lib/nvidia-cache /var/lib/jellyfin/.nv
-    gpu1 $ sudo mkdir /var/lib/nvidia-cache
-    gpu1 $ sudo chown jellyfin /var/lib/nvidia-cache
-    gpu1 $ ls -alh /var/lib/jellyfin
-    [...]
-    lrwxrwxrwx  1 root     root         17 Jun 11 15:51 .nv -> /var/lib/nvidia-cache
-    [...]
-
-Be sure to adjust these paths to match your Jellyfin setup. The name of the target doesn't matter too much, as long as `.nv` inside the homedir is symlinked to it and it is owned by the `jellyfin` service user.
-
-This is because some functions of FFMpeg's NVEnc/NVDec stack - specifically the `scale_cuda` and `tonemap_cuda` filters - leverage this directory to cache their JIT codes, and this can result in very slow startup times and very poor transcoding performance due to NFS locking issues. See https://developer.nvidia.com/blog/cuda-pro-tip-understand-fat-binaries-jit-caching/ for further information.
-
-Alternatively, you can simplify the NFS mount to only export and mount the directories that are actually required to pass transcoded data back (at the least, `transcodes` and `data/subtitles`) over NFS, and leave the rest of the directory local to the remote host, but this likely isn't required with this workaround and makes setup more complex. Based on that link, you might also be able to experiment with the environment variables that control the JIT caching to move it somewhere else, but this has not been tested by the author. Feel free to experiment and find the best solution for your setup.
+I'm always happy to help, though please ensure you try to follow the setup guide first. I can be found [on Matrix](https://matrix.to/#/@joshuaboniface:bonifacelabs.ca) or via email at `joshua@boniface.me`. Please note though that I may be unresponsive sometimes, though I will get back to you eventually I promise!
