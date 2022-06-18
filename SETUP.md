@@ -215,7 +215,7 @@ As long as these steps work, all further steps should as well.
 If you are using NVEnv/NVDec, it's probably a good idea to symlink the `.nv` folder inside the Jellyfin user's homedir (i.e. `/var/lib/jellyfin/.nv`) to somewhere outside of the NFS volume on both sides. For example:
 
    ```
-   jellyfin1  $ sudo mv /var/lib/jellyfin/.nv /var/lib/nvidia-cache || sudo -u jellyfin mkdir /var/lib/nvidia-cache
+   jellyfin1  $ sudo mv /var/lib/jellyfin/.nv /var/lib/nvidia-cache  # or "sudo mkdir /var/lib/nvidia-cache" and "sudo chown jellyfin /var/lib/nvidia-cache" if it does not yet exist
    jellyfin1  $ sudo ln -s /var/lib/nvidia-cache /var/lib/jellyfin/.nv
    transcode1 $ sudo mkdir /var/lib/nvidia-cache
    transcode1 $ sudo chown jellyfin /var/lib/nvidia-cache
