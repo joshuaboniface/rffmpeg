@@ -63,8 +63,11 @@ This guide is provided as a basic starting point - there are myriad possible com
 1. Install the required dependencies of `rffmpeg`:
 
    ```
-   jellyfin1 $ sudo apt -y install python3-yaml python3-subprocess
+   jellyfin1 $ sudo apt -y install python3-yaml
+   jellyfin1 $ sudo apt -y install python3-subprocess
    ```
+
+   Note: On some Ubuntu versions, `python3-subprocess` does not exist, and should instead be part of the Python standard library. Skip installing this package if it can't be found.
 
 1. Install the NFS kernel server. We will use NFS to export the various required directories so the transcode machine can read from and write to them.
 
