@@ -48,19 +48,6 @@ This guide is provided as a basic starting point - there are myriad possible com
 
    * **NOTE:** Ensure you use the exact name here that you will use in `rffmpeg.yml` in the next step. If this is an FQDN (e.g. `jellyfin1.mydomain.tld`) or an IP (e.g. `192.168.0.101`) instead of a short name, use that instead in this command, or repeat it for every possible option (it doesn't hurt).
 
-1. Install the `rffmpeg` utility. First, create a directory for the configuration at `/etc/rffmpeg`, copy `rffmpeg.yml.sample` to `/etc/rffmpeg/rffmpeg.yml` and edit it to suit your needs. Then install the actual `rffmpeg.py` binary somewhere (I recommend `/usr/local/bin`) and make it executable. Finally, create symlinks so that the names `ffmpeg` and `ffprobe` map to the `rffmpeg.py` binary.
-
-   ```
-   jellyfin1 $ git clone https://github.com/joshuaboniface/rffmpeg  # or download the files manually
-   jellyfin1 $ sudo mkdir -p /etc/rffmpeg
-   jellyfin1 $ sudo cp rffmpeg/rffmpeg.yml.sample /etc/rffmpeg/rffmpeg.yml
-   jellyfin1 $ sudo $EDITOR /etc/rffmpeg/rffmpeg.yml  # edit it to suit your needs
-   jellyfin1 $ sudo cp rffmpeg/rffmpeg.py /usr/local/bin/rffmpeg.py
-   jellyfin1 $ sudo chmod +x /usr/local/bin/rffmpeg.py
-   jellyfin1 $ sudo ln -s /usr/local/bin/rffmpeg.py /usr/local/bin/ffmpeg
-   jellyfin1 $ sudo ln -s /usr/local/bin/rffmpeg.py /usr/local/bin/ffprobe
-   ```
-
 1. Install the required dependencies of `rffmpeg`:
 
    ```
@@ -69,6 +56,25 @@ This guide is provided as a basic starting point - there are myriad possible com
    ```
 
    Note: On some Ubuntu versions, `python3-subprocess` does not exist, and should instead be part of the Python standard library. Skip installing this package if it can't be found.
+
+1. Clone the `rffmpeg` repository somewhere ont he system, then install the `rffmpeg` binary, make it executable, and prepare symlinks for the command names `ffmpeg` and `ffprobe` to it. I recommend storing these in `/usr/local/bin` for simplicity.
+
+   ```
+   jellyfin1 $ git clone https://github.com/joshuaboniface/rffmpeg  # or download the files manually
+   jellyfin1 $ sudo cp rffmpeg/rffmpeg.py /usr/local/bin/rffmpeg.py
+   jellyfin1 $ sudo chmod +x /usr/local/bin/rffmpeg.py
+   jellyfin1 $ sudo ln -s /usr/local/bin/rffmpeg.py /usr/local/bin/ffmpeg
+   jellyfin1 $ sudo ln -s /usr/local/bin/rffmpeg.py /usr/local/bin/ffprobe
+   ```
+
+1. Create a directory for the `rffmpeg` configuration at `/etc/rffmpeg`, then copy `rffmpeg.yml.sample` to `/etc/rffmpeg/rffmpeg.yml` and edit it to suit your needs.
+   ```
+   jellyfin1 $ sudo mkdir -p /etc/rffmpeg
+   jellyfin1 $ sudo cp rffmpeg/rffmpeg.yml.sample /etc/rffmpeg/rffmpeg.yml
+   jellyfin1 $ sudo $EDITOR /etc/rffmpeg/rffmpeg.yml  # edit it to suit your needs
+   ```
+
+   Generally, if you're following this guide exactly, the only part that needs to be modified is the `rffmpeg` -> `remote` -> `hosts` section, where you define the target hosts. For more detail on weights, see the main [README.md](README.md#remote-hosts).
 
 1. Install the NFS kernel server. We will use NFS to export the various required directories so the transcode machine can read from and write to them.
 

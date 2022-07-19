@@ -28,11 +28,73 @@ The `rffmpeg.yml.sample` is self-documented for the most part. Some additional i
 
 rffmpeg supports setting multiple hosts. It keeps state in `/run/shm/rffmpeg` of all running processes, and these state files are used during rffmpeg's initialization in order to determine the optimal target host. rffmpeg will run through these hosts sequentially, choosing the one with the fewest running rffmpeg jobs. This helps distribute the transcoding load across multiple servers, and can also provide redundancy if one of the servers is offline - rffmpeg will detect if a host is unreachable and set it "bad" for the remainder of the run, thus skipping it until the process completes.
 
-Hosts can also be assigned weights (see `rffmpeg.yml.sample` for an example) that allow the host to take on that many times the number of active processes versus weight-1 hosts. The `rffmpeg` process does a floor division of the number of active processes on a host with that host weight to determine its "weighted [process] count", which is then used instead to determine the lease-loaded host to use.
+Hosts can also be assigned weights (see `rffmpeg.yml.sample` for an example) that allow the host to take on that many times the number of active processes versus weight-1 hosts. The `rffmpeg` process does a floor division of the number of active processes on a host with that host weight to determine its "weighted [process] count", which is then used instead to determine the lease-loaded host to use. Note that `rffmpeg` does not take into account actual system load, etc. when determining which host to use; it treats each running command equally regardless of how intensive it actually is.
 
-Note that `rffmpeg` does not take into account actual system load, etc. when determining which host to use; it treats each running command equally regardless of how intensive it actually is.
+#### Host lists
 
-### Localhost and fallback
+Hosts are specified as a YAML list in the relevant section of `rffmpeg.yml`, with one list entry per target. A single list entry can be specfied in one of two ways. Either a direct list value of the hostame/IP:
+
+```
+- myhostname.domain.tld
+```
+
+Or as a fully expanded `name:`/`weight:` pair.
+
+```
+- name: myhostname.domain.tld
+  weight: 2
+```
+
+The first, direct list value formatting implies `weight: 1`. Examples of both styles can be found in the same configuration.
+
+You can get creative with this list, especially since `rffmpeg` always checks the list in order to find the next available host. For an example of a complex setup, if you had 3 hosts, and wanted 1+2+2 processes, the following would be the default way to acheive this:
+
+```
+- name: host1
+  weight: 1
+- name: host2
+  weight: 2
+- name: host3
+  weight: 2
+```
+
+This would however spread processes out like this, which might work well, but might not for some usecases:
+
+```
+proc1: host1
+proc2: host2
+proc3: host2
+proc4: host3
+proc5: host3
+proc6: host1
+etc.
+```
+
+You could instead specify the hosts like this:
+
+```
+- host1
+- host2
+- host3
+- host2
+- host3
+```
+
+Which would instead give a process spread like:
+
+```
+proc1: host1
+proc2: host2
+proc3: host3
+proc4: host2
+proc5: host3
+proc6: host1
+etc.
+```
+
+Experiment with the ordering based on your load and usecase.
+
+#### Localhost and fallback
 
 If one of the hosts in the config file is called "localhost", rffmpeg will run locally without SSH. This can be useful if the local machine is also a powerful transcoding device.
 
