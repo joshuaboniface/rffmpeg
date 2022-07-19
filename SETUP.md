@@ -48,7 +48,7 @@ This guide is provided as a basic starting point - there are myriad possible com
 
    * **NOTE:** Ensure you use the exact name here that you will use in `rffmpeg.yml` in the next step. If this is an FQDN (e.g. `jellyfin1.mydomain.tld`) or an IP (e.g. `192.168.0.101`) instead of a short name, use that instead in this command, or repeat it for every possible option (it doesn't hurt).
 
-1. Install the `rffmpeg` utility. First, create a directory for the configuration at `/etc/rffmpeg`, copy `rffmpeg.yml.sample` to `/etc/rffmpeg/rffmpeg.yml` and edit it to suit your needs. Then install the actual `rffmpeg.py` binary somewhere (I recommend `/usr/local/bin`). Finally, create symlinks so that the names `ffmpeg` and `ffprobe` map to the `rffmpeg.py` binary.
+1. Install the `rffmpeg` utility. First, create a directory for the configuration at `/etc/rffmpeg`, copy `rffmpeg.yml.sample` to `/etc/rffmpeg/rffmpeg.yml` and edit it to suit your needs. Then install the actual `rffmpeg.py` binary somewhere (I recommend `/usr/local/bin`) and make it executable. Finally, create symlinks so that the names `ffmpeg` and `ffprobe` map to the `rffmpeg.py` binary.
 
    ```
    jellyfin1 $ git clone https://github.com/joshuaboniface/rffmpeg  # or download the files manually
@@ -56,6 +56,7 @@ This guide is provided as a basic starting point - there are myriad possible com
    jellyfin1 $ sudo cp rffmpeg/rffmpeg.yml.sample /etc/rffmpeg/rffmpeg.yml
    jellyfin1 $ sudo $EDITOR /etc/rffmpeg/rffmpeg.yml  # edit it to suit your needs
    jellyfin1 $ sudo cp rffmpeg/rffmpeg.py /usr/local/bin/rffmpeg.py
+   jellyfin1 $ sudo chmod +x /usr/local/bin/rffmpeg.py
    jellyfin1 $ sudo ln -s /usr/local/bin/rffmpeg.py /usr/local/bin/ffmpeg
    jellyfin1 $ sudo ln -s /usr/local/bin/rffmpeg.py /usr/local/bin/ffprobe
    ```
