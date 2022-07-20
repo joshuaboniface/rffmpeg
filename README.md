@@ -30,9 +30,9 @@ For a comprehensive installation tutorial based on a reference setup, please see
 
 ## Important Considerations
 
-### The rffmpeg Configuration file
+### The `rffmpeg` Configuration file
 
-The rffmpeg configuration file located at `rffmpeg.yml.sample` is an example that shows all default options. Even though this file is effectively "empty", it *must* be present at `/etc/rffmpeg/rffmpeg.yml` or at an alternative location specified by the environment variable `RFFMPEG_CONFIG`; the latter is only useful for testing, as media programs like Jellyfin provide no way to specify this.
+The `rffmpeg` configuration file located at `rffmpeg.yml.sample` is an example that shows all default options. Even though this file is effectively "empty", it *must* be present at `/etc/rffmpeg/rffmpeg.yml` or at an alternative location specified by the environment variable `RFFMPEG_CONFIG`; the latter is only useful for testing, as media programs like Jellyfin provide no way to specify this.
 
 To override a default option, simply uncomment the relevant line and adjust it to suit your needs. For those using [Jellyfin](https://jellyfin.org) and following the [SETUP guide](SETUP.md), no default options will need to be changed.
 
@@ -42,25 +42,29 @@ Since the configuration file is YAML, ensure that you do not use "Tab" character
 
 ### Initializing Rffmpeg
 
-After first installing rffmpeg, ensure you initialize the database with the `sudo rffmpeg init` command. Note that `sudo` is required here to create the required data paths, but afterwards, `rffmpeg` can be run by anyone in the configured group (by default the `sudo` group).
+After first installing `rffmpeg`, ensure you initialize the database with the `sudo rffmpeg init` command. Note that `sudo` is required here to create the required data paths, but afterwards, `rffmpeg` can be run by anyone in the configured group (by default the `sudo` group).
 
 Rffmpeg is a Click-based application; thus, all commands have a `-h` or `--help` flag to show usage and additional options that may be specified.
 
 ### Viewing Status
 
-Once installed and initialized, the status of the rffmpeg system can be viewed with the command `rffmpeg status`. This will show all configured target hosts, their states, and any active commands being run.
+Once installed and initialized, the status of the `rffmpeg` system can be viewed with the command `rffmpeg status`. This will show all configured target hosts, their states, and any active commands being run.
 
 ### Adding or Removing Target Hosts
 
 To add a target host, use the command `rffmpeg add`. This command takes the optional `-w`/`--weight` flag to adjust the weight of the target host (see below). A host can be added more than once.
 
-To remove a target host, use the command `rffmpeg remove`. This command takes either a target host name/IP, which affects all instances of that name, or a specific host ID. Removing an in-use target host will not terminate any running processes, though it may result in undefined behaviour within rffmpeg. Before removing a host it is best to ensure there is nothing using it.
+To remove a target host, use the command `rffmpeg remove`. This command takes either a target host name/IP, which affects all instances of that name, or a specific host ID. Removing an in-use target host will not terminate any running processes, though it may result in undefined behaviour within `rffmpeg`. Before removing a host it is best to ensure there is nothing using it.
+
+### Viewing the Logfile
+
+The `rffmpeg` CLI offers a convenient way to view the log file. Use `rffmpeg log` to view the entire logfile in the current pager (usually `less`), or use `rffmpeg log -f` to follow any new log entries after that point (like `tail -0 -f`).
 
 ### Localhost and Fallback
 
-If one of the hosts in the config file is called "localhost", rffmpeg will run locally without SSH. This can be useful if the local machine is also a powerful transcoding device.
+If one of the hosts in the config file is called "localhost", `rffmpeg` will run locally without SSH. This can be useful if the local machine is also a powerful transcoding device.
 
-In addition, rffmpeg will fall back to "localhost" should it be unable to find any working remote hosts. This helps prevent situations where rffmpeg cannot be run due to none of the remote host(s) being available.
+In addition, `rffmpeg` will fall back to "localhost" should it be unable to find any working remote hosts. This helps prevent situations where `rffmpeg` cannot be run due to none of the remote host(s) being available.
 
 In both cases, note that, if hardware acceleraton is configured, it *must* be available on the local host as well, or the `ffmpeg` commands will fail. There is no easy way around this without rewriting arguments, and this is currently out-of-scope for `rffmpeg`. You should always use a lowest-common-denominator approach when deciding on what additional option(s) to enable, such that any configured host can run any process.
 
@@ -68,7 +72,7 @@ The exact path to the local `ffmpeg` and `ffprobe` binaries can be overridden in
 
 ### Target Host Selection
 
-When more than one target host is present, rffmpeg uses the following rules to select a new host:
+When more than one target host is present, `rffmpeg` uses the following rules to select a new host:
 
 1. Any hosts marked `bad` are ignored until that marking is cleared.
 
@@ -84,7 +88,7 @@ When more than one target host is present, rffmpeg uses the following rules to s
 
 ### Target Host Weights and Duplicated Target Hosts
 
-When adding a host to rffmpeg, a weight can be specified. Weights are used during the calculation of the fewest number of processes among hosts. The actual number of processes running on the host is floor divided (rounded down to the nearest divisible integer) by the weight to give a "weighted count", which is then used in the determination. This option allows one host to take on more processes than other nodes, as it will be chosen as the "least busy" host more often.
+When adding a host to `rffmpeg`, a weight can be specified. Weights are used during the calculation of the fewest number of processes among hosts. The actual number of processes running on the host is floor divided (rounded down to the nearest divisible integer) by the weight to give a "weighted count", which is then used in the determination. This option allows one host to take on more processes than other nodes, as it will be chosen as the "least busy" host more often.
 
 For example, consider two hosts: `host1` with weight 1, and `host2` with weight 5. `host2` would have its actual number of processes floor divided by `5`, and thus any number of processes under `5` would count as `0`, any number of processes between `5` and `10` would count as `1`, and so on, resulting in `host2` being chosen over `host1` even if it had several processes. Thus, `host2` would on average handle 5x more `ffmpeg` processes than `host1` would.
 
@@ -102,7 +106,7 @@ If for some reason all configured hosts are marked `bad`, fallback will be engag
 
 ## FAQ
 
-### Why did you make rffmpeg?
+### Why did you make `rffmpeg`?
 
 My virtualization setup (multiple 1U nodes with lots of live migration/failover) didn't lend itself well to passing a GPU into my Jellyfin VM, but I wanted to offload transcoding because doing 4K HEVC transcodes with a CPU performs horribly. I happened to have another machine (my "base" remote headless desktop/gaming server) which had a GPU, so I wanted to find a way to offload the transcoding to it. I came up with `rffmpeg` as a simple wrapper to the `ffmpeg` and `ffprobe` calls that Jellyfin (and Emby, and likely other media servers too) makes which would run them on that host instead. After finding it quite useful myself, I released it publicly as GPLv3 software so that others may benefit as well!
 
