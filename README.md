@@ -80,7 +80,7 @@ The exact path to the local `ffmpeg` and `ffprobe` binaries can be overridden in
 
 ### Target Host Selection
 
-When more than one target host is present, `rffmpeg` uses the following rules to select a new host. These rules are evaluated each time a new `rffmpeg` alias process is spawned.
+When more than one target host is present, `rffmpeg` uses the following rules to select a target host. These rules are evaluated each time a new `rffmpeg` alias process is spawned based on the current state (actively running processes, etc.).
 
 1. Any hosts marked `bad` are ignored.
 
