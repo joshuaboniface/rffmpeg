@@ -1,6 +1,6 @@
 # rffmpeg
 
-<p align="center"
+<p align="center">
 <a href="https://matrix.to/#/#rffmpeg:matrix.org">
 <img alt="Chat on Matrix" src="https://img.shields.io/matrix/rffmpeg:matrix.org.svg?logo=matrix"/>
 </a>
