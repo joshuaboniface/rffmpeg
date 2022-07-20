@@ -166,4 +166,4 @@ Absolutely - I'm happy to take pull requests for just about any bugfix or improv
 
 ### Can you help me set up my server?
 
-I'm always happy to help, though please ensure you try to follow the setup guide first. Support can be found [on Matrix](https://matrix.to/#/#rffmpeg:matrix.org) or via email at `joshua@boniface.me`. Please note though that I may be unresponsive sometimes, though I will get back to you eventually I promise! Please don't open Issues here about setup problems; the Issue tracker is for bugs or feature requests instead.
+I'm always happy to help, though please ensure you try to follow the setup guide first - that's why I wrote it! Support can be found [on Matrix](https://matrix.to/#/#rffmpeg:matrix.org) or via email at `joshua@boniface.me`. Please note though that I may be unresponsive sometimes, though I will get back to you eventually I promise! Please don't open Issues here about setup problems; the Issue tracker is for bugs or feature requests instead.
