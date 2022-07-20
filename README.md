@@ -74,7 +74,7 @@ If one of the hosts in the config file is called "localhost", `rffmpeg` will run
 
 In addition, `rffmpeg` will fall back to "localhost" should it be unable to find any working remote hosts. This helps prevent situations where `rffmpeg` cannot be run due to none of the remote host(s) being available.
 
-In both cases, note that, if hardware acceleraton is configured, it *must* be available on the local host as well, or the `ffmpeg` commands will fail. There is no easy way around this without rewriting arguments, and this is currently out-of-scope for `rffmpeg`. You should always use a lowest-common-denominator approach when deciding on what additional option(s) to enable, such that any configured host can run any process.
+In both cases, note that, if hardware acceleration is configured, it *must* be available on the local host as well, or the `ffmpeg` commands will fail. There is no easy way around this without rewriting arguments, and this is currently out-of-scope for `rffmpeg`. You should always use a lowest-common-denominator approach when deciding on what additional option(s) to enable, such that any configured host can run any process.
 
 The exact path to the local `ffmpeg` and `ffprobe` binaries can be overridden in the configuration, should their paths not match those of the remote system(s).
 
@@ -84,7 +84,7 @@ When more than one target host is present, `rffmpeg` uses the following rules to
 
 1. Any hosts marked `bad` are ignored.
 
-1. All remaining hosts are iterated through in an indetermine order (Python dictionary with root key as the host ID). For each host:
+1. All remaining hosts are iterated through in an indeterminate order (Python dictionary with root key as the host ID). For each host:
 
    a. If the host is not `localhost`/`127.0.0.1`, it is tested to ensure it is reachable (responds to `ffmpeg -version` over SSH). If it is not reachable, it is marked `bad` for the duration of this processes' runtime and skipped.
 
@@ -100,7 +100,7 @@ When adding a host to `rffmpeg`, a weight can be specified. Weights are used dur
 
 For example, consider two hosts: `host1` with weight 1, and `host2` with weight 5. `host2` would have its actual number of processes floor divided by `5`, and thus any number of processes under `5` would count as `0`, any number of processes between `5` and `10` would count as `1`, and so on, resulting in `host2` being chosen over `host1` even if it had several processes. Thus, `host2` would on average handle 5x more `ffmpeg` processes than `host1` would.
 
-Host weighting is a fairly blunt instrument, and only becomes important when many simultaneous `ffmpeg` processes/transcodes are occurring at once, and where the target hosts have very different performance profiles. Generally leaving all hosts at weight 1 would be sufficient for most usecases.
+Host weighting is a fairly blunt instrument, and only becomes important when many simultaneous `ffmpeg` processes/transcodes are occurring at once, and where the target hosts have very different performance profiles. Generally leaving all hosts at weight 1 would be sufficient for most use-cases.
 
 Furthermore, it is possible to add a host of the same name more than once in the `rffmpeg add` command. This has a very similar, but subtly different, effect from setting a higher weight. A host present in the list is more likely to be seen before another host, and thus this can further influence the desired target.
 
@@ -110,7 +110,7 @@ As mentioned above under [Target Host Selection](README.md#target-host-selection
 
 Once a host is marked `bad`, it will remain so for as long as the `rffmpeg` process that marked it `bad` is running. This can last from a few seconds to several tens of minutes. During this time, any new `rffmpeg` processes that start will see the host marked as `bad` and thus skip it for target selection. Once the marking `rffmpeg` process completes or is terminated, the `bad` status of that host will be cleared, allowing the next run to try it again. This strikes a balance between always retrying known-unresponsive hosts over and over (and thus delaying process startup), and ensuring that hosts will eventually be retried.
 
-If for some reason all configured hosts are marked `bad`, fallback will be engaged; see the above section [Localhost and Fallback](README.md#localhost-and-fallback) for details on what occurrs in this situation. An explicit `localhost` host entry cannot be marked `bad`.
+If for some reason all configured hosts are marked `bad`, fallback will be engaged; see the above section [Localhost and Fallback](README.md#localhost-and-fallback) for details on what occurs in this situation. An explicit `localhost` host entry cannot be marked `bad`.
 
 ## FAQ
 
@@ -138,11 +138,11 @@ This has a number of side effects:
  * `rffmpeg` does not know what media is playing or where it's outputting files to, and cannot alter these paths.
  * `rffmpeg` cannot turn on or off special `ffmpeg` options depending on the host selected.
 
-Thus it is imperitive that you set up your entire system correctly for `rffmpeg` to work. Please see the [SETUP guide](SETUP.md) for more information.
+Thus it is imperative that you set up your entire system correctly for `rffmpeg` to work. Please see the [SETUP guide](SETUP.md) for more information.
 
 ### Can `rffmpeg` do Wake-On-LAN or other similar options to turn on a transcode server?
 
-Right now, no. I've thought about implementing this more than once (most recently, in response to [Issue #21](https://github.com/joshuaboniface/rffmpeg/issues/21)) but ultimately I've never though this was worth the complexity and delays in spwaning that it would add to the tool. That issue does provide one example of a workaround wrapper script that could accomplish this, but I don't see it being a part of the actual tool itself.
+Right now, no. I've thought about implementing this more than once (most recently, in response to [Issue #21](https://github.com/joshuaboniface/rffmpeg/issues/21)) but ultimately I've never though this was worth the complexity and delays in spawning that it would add to the tool. That issue does provide one example of a workaround wrapper script that could accomplish this, but I don't see it being a part of the actual tool itself.
 
 ### I'm getting an error, help!
 

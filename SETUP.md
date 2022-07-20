@@ -6,6 +6,8 @@ This guide is provided as a basic starting point - there are myriad possible com
 
 ## Set up the media server (`jellyfin1`)
 
+### Basic Setup
+
 1. Install Jellyfin (or similar FFMPEG-using media server) on your machine. This guide assumes you're using native `.deb` packages.
 
 1. Make note of the Jellyfin service user's details, specifically the UID and any groups (and GIDs) it is a member of; this will be needed later on.
@@ -50,6 +52,8 @@ This guide is provided as a basic starting point - there are myriad possible com
 
    * **NOTE:** Ensure you use the exact name here that you will use in `rffmpeg`. If this is an FQDN (e.g. `jellyfin1.mydomain.tld`) or an IP (e.g. `192.168.0.101`) instead of a short name, use that instead in this command, or repeat it for every possible option (it doesn't hurt).
 
+### `rffmpeg` Setup
+
 1. Install the required Python3 dependencies of `rffmpeg`:
 
    ```
@@ -58,9 +62,9 @@ This guide is provided as a basic starting point - there are myriad possible com
    jellyfin1 $ sudo apt -y install python3-subprocess
    ```
 
-   Note: On some Ubuntu versions, `python3-subprocess` does not exist, and should instead be part of the Python standard library. Skip installing this package if it can't be found.
+   * **NOTE:** On some Ubuntu versions, `python3-subprocess` does not exist, and should instead be part of the Python standard library. Skip installing this package if it can't be found.
 
-1. Clone the `rffmpeg` repository somewhere ont he system, then install the `rffmpeg` binary, make it executable, and prepare symlinks for the command names `ffmpeg` and `ffprobe` to it. I recommend storing these in `/usr/local/bin` for simplicity.
+1. Clone the `rffmpeg` repository somewhere onto the system, then install the `rffmpeg` binary, make it executable, and prepare symlinks for the command names `ffmpeg` and `ffprobe` to it. I recommend storing these in `/usr/local/bin` for simplicity and so that they are present on the default `$PATH` for most users.
 
    ```
    jellyfin1 $ git clone https://github.com/joshuaboniface/rffmpeg  # or download the files manually
@@ -78,12 +82,16 @@ This guide is provided as a basic starting point - there are myriad possible com
    jellyfin1 $ sudo $EDITOR /etc/rffmpeg/rffmpeg.yml  # if required
    ```
 
-1. Initialize `rffmpeg` (note the `sudo` command) and add at least one remote host to it. You can add multiple hosts now or later, set weights of hosts, and add a host more than once. For full details see the [main README](README.md).
+1. Initialize `rffmpeg` (note the `sudo` command) and add at least one remote host to it. You can add multiple hosts now or later, set weights of hosts, and add a host more than once. For full details see the [main README](README.md) or run `rffmpeg --help` to view the CLI help menu.
 
    ```
    jellyfin1 $ sudo rffmpeg init --yes
    jellyfin1 $ rffmpeg add --weight 1 gpu1
    ```
+
+### NFS Setup
+
+* **WARNING:** This guide assumes your hosts are on the same private local network. It is not recommended to run NFS over the Internet as it is unencrypted and bandwidth-intensive. Consider other remote filesystems like SSHFS in such cases as these will offer greater privacy and robustness.
 
 1. Install the NFS kernel server. We will use NFS to export the various required directories so the transcode machine can read from and write to them.
 
@@ -128,6 +136,14 @@ This guide is provided as a basic starting point - there are myriad possible com
 
 1. Install the `jellyfin-ffmpeg` (Jellyfin <= 10.7.7) or `jellyfin-ffmpeg5` (Jellyfin >= 10.8.0) package; follow the same steps as you would to install Jellyfin on the media server, only don't install `jellyfin` (and `jellyfin-server`/`jellyfin-web`) itself, just `jellyfin-ffmpeg[5]`.
 
+   ```
+   transcode1 $ sudo apt -y install curl gnupg
+   transcode1 $ curl -fsSL https://repo.jellyfin.org/ubuntu/jellyfin_team.gpg.key | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/jellyfin.gpg
+   transcode1 $ echo "deb [arch=$( dpkg --print-architecture )] https://repo.jellyfin.org/$( awk -F'=' '/^ID=/{ print $NF }' /etc/os-release ) $( awk -F'=' '/^VERSION_CODENAME=/{ print $NF }' /etc/os-release ) main" | sudo tee /etc/apt/sources.list.d/jellyfin.list
+   transcode1 $ sudo apt update
+   transcode1 $ sudo apt install jellyfin-ffmpeg5  # or jellyfin-ffmpeg with Jellyfin <= 10.7.7
+   ```
+
 1. Install the NFS client utilities:
 
    ```
@@ -152,7 +168,7 @@ This guide is provided as a basic starting point - there are myriad possible com
    transcode1 $ sudo chattr +i ${jellyfin_data_path}
    ```
 
-   * Don't worry about permissions here; the mount will set those.
+   * **NOTE:** Don't worry about permissions here; the mount will set those.
 
 1. Create the NFS client mount. There are two main ways to do this:
 
@@ -165,31 +181,31 @@ This guide is provided as a basic starting point - there are myriad possible com
 
    * Use a SystemD `mount` unit, which is a newer way of doing mounts with SystemD. I personally prefer this method as I find it easier to set up automatically, but this is up to preference. An example based on mine would be:
 
-   ```
-   transcode1 $ cat /etc/systemd/system/var-lib-jellyfin.mount
-   [Unit]
-   Description = NFS volume for Jellyfin data directory
-   Requires = network-online.target
-   After = network-online.target
+      ```
+      transcode1 $ cat /etc/systemd/system/var-lib-jellyfin.mount
+      [Unit]
+      Description = NFS volume for Jellyfin data directory
+      Requires = network-online.target
+      After = network-online.target
 
-   [Mount]
-   type = nfs
-   What = jellyfin1:/var/lib/jellyfin
-   Where = /var/lib/jellyfin
-   Options = _netdev,sync,vers=3
+      [Mount]
+      type = nfs
+      What = jellyfin1:/var/lib/jellyfin
+      Where = /var/lib/jellyfin
+      Options = _netdev,sync,vers=3
 
-   [Install]
-   WantedBy = remote-fs.target
-   ```
+      [Install]
+      WantedBy = remote-fs.target
+      ```
 
-   Once the unit file is created, you can then reload the unit list and mount it:
+      Once the unit file is created, you can then reload the unit list and mount it:
 
-   ```
-   transcode1 $ sudo systemctl daemon-reload
-   transcode1 $ sudo systemctl start var-lib-jellyfin.mount
-   ```
+      ```
+      transcode1 $ sudo systemctl daemon-reload
+      transcode1 $ sudo systemctl start var-lib-jellyfin.mount
+      ```
 
-   Note that mount units are fairly "new" and can be a bit finicky, be sure to read the SystemD documentation if you get stuck! Generally for new users, I'd recommend the `/etc/fstab` method instead.
+      Note that mount units are fairly "new" and can be a bit finicky, be sure to read the SystemD documentation if you get stuck! Generally for new users, I'd recommend the `/etc/fstab` method instead.
 
 1. Mount your media directories in the same location(s) as on the media server. If you exported them via NFS from your media server, use the process above only for those directories instead.
 
@@ -229,7 +245,7 @@ As long as these steps work, all further steps should as well.
 
 1. Try to play a movie that requires transcoding, and verify that everything is working as expected.
 
-## NOTE for NVEnv/NVDec HWA
+## NOTE for NVEnv/NVDec Hardware Acceleration
 
 If you are using NVEnv/NVDec, it's probably a good idea to symlink the `.nv` folder inside the Jellyfin user's homedir (i.e. `/var/lib/jellyfin/.nv`) to somewhere outside of the NFS volume on both sides. For example:
 
