@@ -40,11 +40,11 @@ Each option has an explanatory comment above it detailing its purpose.
 
 Since the configuration file is YAML, ensure that you do not use "Tab" characters inside of it, only spaces.
 
-### Initializing Rffmpeg
+### Initializing `rffmpeg`
 
 After first installing `rffmpeg`, ensure you initialize the database with the `sudo rffmpeg init` command. Note that `sudo` is required here to create the required data paths, but afterwards, `rffmpeg` can be run by anyone in the configured group (by default the `sudo` group).
 
-Rffmpeg is a Click-based application; thus, all commands have a `-h` or `--help` flag to show usage and additional options that may be specified.
+`rffmpeg` is a Click-based application; thus, all commands have a `-h` or `--help` flag to show usage and additional options that may be specified.
 
 ### Viewing Status
 
@@ -84,7 +84,7 @@ When more than one target host is present, `rffmpeg` uses the following rules to
 
    c. If it is active, it is checked against the host with the current fewest number of processes, adjusted for host weight. If it has the fewest, it takes over this role.
 
-1. Once all hosts have been iterated through, at least one host should have been chosen: either the first `idle` host, or the host with the fewest number of active processes. Rffmpeg will then begin running against this host.
+1. Once all hosts have been iterated through, at least one host should have been chosen: either the first `idle` host, or the host with the fewest number of active processes. `rffmpeg` will then begin running against this host.
 
 ### Target Host Weights and Duplicated Target Hosts
 
