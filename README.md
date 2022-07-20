@@ -82,7 +82,7 @@ When more than one target host is present, `rffmpeg` uses the following rules to
 
    b. If the host is `idle` (has no running processes), it is immediately chosen and the iteration stops.
 
-   c. If it is active, it is checked against the host with the current fewest number of processes, adjusted for host weight. If it has the fewest, it takes over this role.
+   c. If the host is `active`, it is checked against the host with the current fewest number of processes, adjusted for host weight. If it has the fewest, it takes over this role.
 
 1. Once all hosts have been iterated through, at least one host should have been chosen: either the first `idle` host, or the host with the fewest number of active processes. `rffmpeg` will then begin running against this host.
 
