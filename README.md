@@ -1,8 +1,16 @@
 # rffmpeg
 
 <p align="center">
+<img alt="License: GPLv3+" src="https://img.shields.io/github/license/joshuaboniface/rffmpeg"/>
+<img alt="Code Style: Black" src="https://img.shields.io/badge/code%20style-black-000000.svg"/>
 <a href="https://matrix.to/#/#rffmpeg:matrix.org">
 <img alt="Chat on Matrix" src="https://img.shields.io/matrix/rffmpeg:matrix.org.svg?logo=matrix"/>
+</a>
+<a href="https://www.patreon.com/joshuaboniface">
+<img alt="Support me on Patreon" src="https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3Djoshuaboniface%26type%3Dpatrons&style=flat"/>
+</a>
+<a href="https://github.com/sponsors/joshuaboniface">
+<img alt="Support me on GitHub" src="https://img.shields.io/github/sponsors/joshuaboniface?label=GitHub%20Sponsors">
 </a>
 </p>
 
