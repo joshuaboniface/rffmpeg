@@ -34,7 +34,7 @@ For a comprehensive installation tutorial based on a reference setup, please see
 
 The rffmpeg configuration file located at `rffmpeg.yml.sample` is an example that shows all default options. Even though this file is effectively "empty", it *must* be present at `/etc/rffmpeg/rffmpeg.yml` or at an alternative location specified by the environment variable `RFFMPEG_CONFIG`; the latter is only useful for testing, as media programs like Jellyfin provide no way to specify this.
 
-To override a default option, simply uncomment the relevant line and adjust it to suit your needs. For those using [Jellyfin](https://jellyfin.org) and following the [SETUP guide](SETUP.md), no default options will need to be changed.o
+To override a default option, simply uncomment the relevant line and adjust it to suit your needs. For those using [Jellyfin](https://jellyfin.org) and following the [SETUP guide](SETUP.md), no default options will need to be changed.
 
 Each option has an explanatory comment above it detailing its purpose.
 
@@ -42,7 +42,7 @@ Since the configuration file is YAML, ensure that you do not use "Tab" character
 
 ### Initializing Rffmpeg
 
-After first installing rffmpeg, ensure you initialize the database with the `sudo rffmpeg init` command. Note that `sudo` is required here to create the required data paths, but afterwards, `rffmpeg` can be run by anyone in the configured group.
+After first installing rffmpeg, ensure you initialize the database with the `sudo rffmpeg init` command. Note that `sudo` is required here to create the required data paths, but afterwards, `rffmpeg` can be run by anyone in the configured group (by default the `sudo` group).
 
 Rffmpeg is a Click-based application; thus, all commands have a `-h` or `--help` flag to show usage and additional options that may be specified.
 
