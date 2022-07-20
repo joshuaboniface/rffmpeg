@@ -74,7 +74,7 @@ The exact path to the local `ffmpeg` and `ffprobe` binaries can be overridden in
 
 When more than one target host is present, `rffmpeg` uses the following rules to select a new host. These rules are evaluated each time a new `rffmpeg` alias process is spawned.
 
-1. Any hosts marked `bad` are ignored until that marking is cleared.
+1. Any hosts marked `bad` are ignored.
 
 1. All remaining hosts are iterated through in an indetermine order (Python dictionary with root key as the host ID). For each host:
 
