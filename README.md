@@ -160,9 +160,9 @@ If it hasn't, you can [ask in our chat](https://matrix.to/#/#rffmpeg:matrix.org)
 
 I will probably ask clarifying questions as required; please be prepared to run test commands, etc. as requested and paste the output.
 
-### I found a bug/flaw and fixed or, or made a feature improvement; can I share it?
+### I found a bug/flaw and fixed it, or made a feature improvement; can I share it?
 
-Absolutely - I'm happy to take pull requests. Though please refer to the "Can `rffmpeg` mangle/alter FFMPEG arguments?" entry above; unless it's really good work with a very explicitly defined limitation, I probably don't want to go down that route, but I'm more than willing to look at what you've done and consider it on its merits.
+Absolutely - I'm happy to take pull requests for just about any bugfix or improvement. There is one exception: please refer to the "Can `rffmpeg` mangle/alter FFMPEG arguments?" entry above; unless it's really good work with a very explicitly defined limitation, I probably don't want to go down that route, but I'm more than willing to look at what you've done and consider it on its merits.
 
 ### Can you help me set up my server?
 
