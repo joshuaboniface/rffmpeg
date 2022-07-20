@@ -100,7 +100,7 @@ When adding a host to `rffmpeg`, a weight can be specified. Weights are used dur
 
 For example, consider two hosts: `host1` with weight 1, and `host2` with weight 5. `host2` would have its actual number of processes floor divided by `5`, and thus any number of processes under `5` would count as `0`, any number of processes between `5` and `10` would count as `1`, and so on, resulting in `host2` being chosen over `host1` even if it had several processes. Thus, `host2` would on average handle 5x more `ffmpeg` processes than `host1` would.
 
-Host weighting is a fairly blunt instrument, and only becomes important when many simultaneous `ffmpeg` processes/transcodes are occurring at once. Generally leaving all hosts at weight 1 would be sufficient for most usecases.
+Host weighting is a fairly blunt instrument, and only becomes important when many simultaneous `ffmpeg` processes/transcodes are occurring at once, and where the target hosts have very different performance profiles. Generally leaving all hosts at weight 1 would be sufficient for most usecases.
 
 Furthermore, it is possible to add a host of the same name more than once in the `rffmpeg add` command. This has a very similar, but subtly different, effect from setting a higher weight. A host present in the list is more likely to be seen before another host, and thus this can further influence the desired target.
 
