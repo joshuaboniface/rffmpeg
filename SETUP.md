@@ -174,10 +174,10 @@ This guide is provided as a basic starting point - there are myriad possible com
 
    * Use the traditional `/etc/fstab` by adding a new entry like so, replacing the paths and hostname as required, and then mounting it:
 
-   ```
-   transcode1 $ echo "jellyfin1:${jellyfin_data_path} ${jellyfin_data_path} nfs defaults,vers=3,sync" | sudo tee -a /etc/fstab
-   transcode1 $ sudo mount ${jellyfin_data_path}
-   ```
+      ```
+      transcode1 $ echo "jellyfin1:${jellyfin_data_path} ${jellyfin_data_path} nfs defaults,vers=3,sync" | sudo tee -a /etc/fstab
+      transcode1 $ sudo mount ${jellyfin_data_path}
+      ```
 
    * Use a SystemD `mount` unit, which is a newer way of doing mounts with SystemD. I personally prefer this method as I find it easier to set up automatically, but this is up to preference. An example based on mine would be:
 
