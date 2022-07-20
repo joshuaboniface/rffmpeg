@@ -117,22 +117,39 @@ def load_config():
 
     # Parse the keys from the remote group
     config["remote_user"] = config_remote.get("user", "jellyfin")
-    config["remote_args"] = config_remote.get("args", ["-i", "/var/lib/jellyfin/.ssh/id_rsa"])
+    config["remote_args"] = config_remote.get(
+        "args", ["-i", "/var/lib/jellyfin/.ssh/id_rsa"]
+    )
     config["persist_time"] = config_remote.get("persist", 300)
 
     # Parse the keys from the commands group
     config["ssh_command"] = config_commands.get("ssh", "/usr/bin/ssh")
     config["pre_commands"] = config_commands.get("pre", [])
-    config["ffmpeg_command"] = config_commands.get("ffmpeg", "/usr/lib/jellyfin-ffmpeg/ffmpeg")
-    config["ffprobe_command"] = config_commands.get("ffprobe", "/usr/lib/jellyfin-ffprobe/ffprobe")
-    config["fallback_ffmpeg_command"] = config_commands.get("fallback_ffmpeg", "/usr/lib/jellyfin-ffmpeg/ffmpeg")
-    config["fallback_ffprobe_command"] = config_commands.get("fallback_ffprobe", "/usr/lib/jellyfin-ffprobe/ffprobe")
+    config["ffmpeg_command"] = config_commands.get(
+        "ffmpeg", "/usr/lib/jellyfin-ffmpeg/ffmpeg"
+    )
+    config["ffprobe_command"] = config_commands.get(
+        "ffprobe", "/usr/lib/jellyfin-ffprobe/ffprobe"
+    )
+    config["fallback_ffmpeg_command"] = config_commands.get(
+        "fallback_ffmpeg", "/usr/lib/jellyfin-ffmpeg/ffmpeg"
+    )
+    config["fallback_ffprobe_command"] = config_commands.get(
+        "fallback_ffprobe", "/usr/lib/jellyfin-ffprobe/ffprobe"
+    )
 
     # Set the database path
-    config["db_path"]= config["state_dir"] + "/rffmpeg.db"
+    config["db_path"] = config["state_dir"] + "/rffmpeg.db"
 
     # Set a list of special flags that cause different behaviour
-    config["special_flags"] = ["-version", "-encoders", "-decoders", "-hwaccels", "-filters", "-h"]
+    config["special_flags"] = [
+        "-version",
+        "-encoders",
+        "-decoders",
+        "-hwaccels",
+        "-filters",
+        "-h",
+    ]
 
     # Set the current PID of this process
     config["current_pid"] = os.getpid()
@@ -148,7 +165,9 @@ def cleanup(signum="", frame=""):
 
     with dbconn(config) as cur:
         cur.execute("DELETE FROM states WHERE process_id = ?", (config["current_pid"],))
-        cur.execute("DELETE FROM processes WHERE process_id = ?", (config["current_pid"],))
+        cur.execute(
+            "DELETE FROM processes WHERE process_id = ?", (config["current_pid"],)
+        )
 
 
 def generate_ssh_command(config, target_host):
@@ -171,9 +190,11 @@ def generate_ssh_command(config, target_host):
 
     # Use SSH control persistence to keep sessions alive for subsequent commands
     if config["persist_time"] > 0:
-        ssh_command.extend(["-o","ControlMaster=auto"])
-        ssh_command.extend(["-o","ControlPath={}/ssh-%r@%h:%p".format(config["persist_dir"])])
-        ssh_command.extend(["-o","ControlPersist={}".format(config["persist_time"])])
+        ssh_command.extend(["-o", "ControlMaster=auto"])
+        ssh_command.extend(
+            ["-o", "ControlPath={}/ssh-%r@%h:%p".format(config["persist_dir"])]
+        )
+        ssh_command.extend(["-o", "ControlPersist={}".format(config["persist_time"])])
 
     # Add the remote config args
     for arg in config["remote_args"]:
@@ -198,7 +219,7 @@ def run_command(command, stdin, stdout, stderr):
         universal_newlines=True,
         stdin=stdin,
         stdout=stdout,
-        stderr=stderr
+        stderr=stderr,
     )
     return p.returncode
 
@@ -219,7 +240,9 @@ def get_target_host(config):
 
         # Get the latest state
         with dbconn(config) as cur:
-            current_state = cur.execute("SELECT * FROM states WHERE host_id = ? ORDER BY id DESC", (hid,)).fetchone()
+            current_state = cur.execute(
+                "SELECT * FROM states WHERE host_id = ? ORDER BY id DESC", (hid,)
+            ).fetchone()
 
         if not current_state:
             current_state = "idle"
@@ -231,7 +254,7 @@ def get_target_host(config):
             "hostname": hostname,
             "weight": weight,
             "current_state": current_state,
-            "commands": [proc[2] for proc in processes if proc[1] == hid]
+            "commands": [proc[2] for proc in processes if proc[1] == hid],
         }
 
     lowest_count = 9999
@@ -247,12 +270,21 @@ def get_target_host(config):
         if host["hostname"] not in ["localhost", "127.0.0.1"]:
             test_ssh_command = generate_ssh_command(config, host["hostname"])
             test_ffmpeg_command = [config["ffmpeg_command"], "-version"]
-            retcode = run_command(test_ssh_command + test_ffmpeg_command, None, None, None)
+            retcode = run_command(
+                test_ssh_command + test_ffmpeg_command, None, None, None
+            )
             if retcode != 0:
                 # Mark the host as bad
                 with dbconn(config) as cur:
-                    log.info("Marking host {} as bad due to retcode {}".format(host["hostname"], retcode))
-                    cur.execute("INSERT INTO states (host_id, process_id, state) VALUES (?, ?, ?)", (hid, config["current_pid"], "bad"))
+                    log.info(
+                        "Marking host {} as bad due to retcode {}".format(
+                            host["hostname"], retcode
+                        )
+                    )
+                    cur.execute(
+                        "INSERT INTO states (host_id, process_id, state) VALUES (?, ?, ?)",
+                        (hid, config["current_pid"], "bad"),
+                    )
                     continue
 
         # If the host state is idle, we can use it immediately
@@ -294,7 +326,7 @@ def run_local_ffmpeg(config, ffmpeg_args):
         # Otherwise, we use stderr as stdout
         rffmpeg_ffmpeg_command.append(config["fallback_ffmpeg_command"])
         stdout = sys.stderr
-        
+
     # Check for special flags that override the default stdout
     if any(item in config["special_flags"] for item in ffmpeg_args):
         stdout = sys.stdout
@@ -306,8 +338,14 @@ def run_local_ffmpeg(config, ffmpeg_args):
     log.info("Local command: {}".format(" ".join(rffmpeg_ffmpeg_command)))
 
     with dbconn(config) as cur:
-        cur.execute("INSERT INTO processes (host_id, process_id, cmd) VALUES (?, ?, ?)", (0, config["current_pid"], cmd_name + " " + " ".join(ffmpeg_args)))
-        cur.execute("INSERT INTO states (host_id, process_id, state) VALUES (?, ?, ?)", (0, config["current_pid"], "active"))
+        cur.execute(
+            "INSERT INTO processes (host_id, process_id, cmd) VALUES (?, ?, ?)",
+            (0, config["current_pid"], cmd_name + " " + " ".join(ffmpeg_args)),
+        )
+        cur.execute(
+            "INSERT INTO states (host_id, process_id, state) VALUES (?, ?, ?)",
+            (0, config["current_pid"], "active"),
+        )
 
     return run_command(rffmpeg_ffmpeg_command, stdin, stdout, stderr)
 
@@ -336,7 +374,7 @@ def run_remote_ffmpeg(config, target_hid, target_host, ffmpeg_args):
         # Otherwise, we use stderr as stdout
         rffmpeg_ffmpeg_command.append(config["ffmpeg_command"])
         stdout = sys.stderr
-        
+
     # Check for special flags that override the default stdout
     if any(item in config["special_flags"] for item in ffmpeg_args):
         stdout = sys.stdout
@@ -349,13 +387,25 @@ def run_remote_ffmpeg(config, target_hid, target_host, ffmpeg_args):
         else:
             rffmpeg_ffmpeg_command.append("{}".format(arg))
 
-    log.info("Remote command: {}".format(" ".join(rffmpeg_ssh_command + rffmpeg_ffmpeg_command)))
+    log.info(
+        "Remote command: {}".format(
+            " ".join(rffmpeg_ssh_command + rffmpeg_ffmpeg_command)
+        )
+    )
 
     with dbconn(config) as cur:
-        cur.execute("INSERT INTO processes (host_id, process_id, cmd) VALUES (?, ?, ?)", (target_hid, config["current_pid"], cmd_name + " " + " ".join(ffmpeg_args)))
-        cur.execute("INSERT INTO states (host_id, process_id, state) VALUES (?, ?, ?)", (target_hid, config["current_pid"], "active"))
+        cur.execute(
+            "INSERT INTO processes (host_id, process_id, cmd) VALUES (?, ?, ?)",
+            (target_hid, config["current_pid"], cmd_name + " " + " ".join(ffmpeg_args)),
+        )
+        cur.execute(
+            "INSERT INTO states (host_id, process_id, state) VALUES (?, ?, ?)",
+            (target_hid, config["current_pid"], "active"),
+        )
 
-    return run_command(rffmpeg_ssh_command + rffmpeg_ffmpeg_command, stdin, stdout, stderr)
+    return run_command(
+        rffmpeg_ssh_command + rffmpeg_ffmpeg_command, stdin, stdout, stderr
+    )
 
 
 def run_ffmpeg(config, ffmpeg_args):
@@ -371,12 +421,12 @@ def run_ffmpeg(config, ffmpeg_args):
         logging.basicConfig(
             filename=config["logfile"],
             level=logging.INFO,
-            format="%(asctime)s - %(name)s[%(process)s] - %(levelname)s - %(message)s"
+            format="%(asctime)s - %(name)s[%(process)s] - %(levelname)s - %(message)s",
         )
     else:
         logging.basicConfig(
             level=logging.INFO,
-            format="%(asctime)s - %(name)s[%(process)s] - %(levelname)s - %(message)s"
+            format="%(asctime)s - %(name)s[%(process)s] - %(levelname)s - %(message)s",
         )
 
     log.info("Starting rffmpeg with args: {}".format(" ".join(ffmpeg_args)))
@@ -416,7 +466,7 @@ def run_control(config):
         "confirm_flag",
         is_flag=True,
         default=False,
-        help="Confirm initialization."
+        help="Confirm initialization.",
     )
     def rffmpeg_click_init(confirm_flag):
         """
@@ -433,7 +483,7 @@ def run_control(config):
                 click.confirm(
                     "Are you sure you want to (re)initalize the database",
                     prompt_suffix="? ",
-                    abort=True
+                    abort=True,
                 )
             except Exception:
                 fail("Aborting due to failed confirmation.")
@@ -442,7 +492,11 @@ def run_control(config):
             try:
                 os.makedirs(config["state_dir"])
             except OSError as e:
-                fail("Failed to create state directory '{}': {}".format(config['state_dir'], e))
+                fail(
+                    "Failed to create state directory '{}': {}".format(
+                        config["state_dir"], e
+                    )
+                )
 
         if Path(config["db_path"]).is_file():
             os.remove(config["db_path"])
@@ -461,9 +515,17 @@ def run_control(config):
         except Exception as e:
             fail("Failed to create database: {}".format(e))
 
-        os.chown(config["state_dir"], getpwnam(config["dir_owner"]).pw_uid, getgrnam(config["dir_group"]).gr_gid)
+        os.chown(
+            config["state_dir"],
+            getpwnam(config["dir_owner"]).pw_uid,
+            getgrnam(config["dir_group"]).gr_gid,
+        )
         os.chmod(config["state_dir"], 0o770)
-        os.chown(config["db_path"], getpwnam(config["dir_owner"]).pw_uid, getgrnam(config["dir_group"]).gr_gid)
+        os.chown(
+            config["db_path"],
+            getpwnam(config["dir_owner"]).pw_uid,
+            getgrnam(config["dir_group"]).gr_gid,
+        )
         os.chmod(config["db_path"], 0o660)
 
     rffmpeg_click.add_command(rffmpeg_click_init)
@@ -492,27 +554,29 @@ def run_control(config):
                 "hostname": "localhost (fallback)",
                 "weight": 0,
                 "current_state": "fallback",
-                "commands": fallback_processes
+                "commands": fallback_processes,
             }
 
         for host in hosts:
             hid, hostname, weight = host
-    
+
             # Get the latest state
             with dbconn(config) as cur:
-                current_state = cur.execute("SELECT * FROM states WHERE host_id = ? ORDER BY id DESC", (hid,)).fetchone()
-    
+                current_state = cur.execute(
+                    "SELECT * FROM states WHERE host_id = ? ORDER BY id DESC", (hid,)
+                ).fetchone()
+
             if not current_state:
                 current_state = "idle"
             else:
                 current_state = current_state[3]
-    
+
             # Create the mappings entry
             host_mappings[hid] = {
                 "hostname": hostname,
                 "weight": weight,
                 "current_state": current_state,
-                "commands": [proc for proc in processes if proc[1] == hid]
+                "commands": [proc for proc in processes if proc[1] == hid],
             }
 
         hostname_length = 9
@@ -528,7 +592,7 @@ def run_control(config):
                 weight_length = len(str(host["weight"])) + 1
             if len(host["current_state"]) + 1 > state_length:
                 state_length = len(host["current_state"]) + 1
-                
+
         output = list()
         output.append(
             "{bold}{hostname: <{hostname_length}} {hid: <{hid_length}} {weight: <{weight_length}} {state: <{state_length}} {commands}{end_bold}".format(
@@ -542,7 +606,7 @@ def run_control(config):
                 weight_length=weight_length,
                 state="State",
                 state_length=state_length,
-                commands="Active Commands"
+                commands="Active Commands",
             )
         )
 
@@ -550,7 +614,9 @@ def run_control(config):
             if len(host["commands"]) < 1:
                 first_command = "N/A"
             else:
-                first_command = "PID {}: {}".format(host["commands"][0][2], host["commands"][0][3])
+                first_command = "PID {}: {}".format(
+                    host["commands"][0][2], host["commands"][0][3]
+                )
 
             host_entry = list()
             host_entry.append(
@@ -563,7 +629,7 @@ def run_control(config):
                     weight_length=weight_length,
                     state=host["current_state"],
                     state_length=state_length,
-                    commands=first_command
+                    commands=first_command,
                 )
             )
 
@@ -580,7 +646,7 @@ def run_control(config):
                         weight_length=weight_length,
                         state="",
                         state_length=state_length,
-                        commands="PID {}: {}".format(command[2], command[3])
+                        commands="PID {}: {}".format(command[2], command[3]),
                     )
                 )
 
@@ -597,7 +663,7 @@ def run_control(config):
         "weight",
         required=False,
         default=1,
-        help="The weight of the host."
+        help="The weight of the host.",
     )
     @click.argument("host")
     def rffmpeg_click_add(weight, host):
@@ -606,8 +672,7 @@ def run_control(config):
         """
         with dbconn(config) as cur:
             cur.execute(
-                """INSERT INTO hosts (hostname, weight) VALUES (?, ?)""",
-                (host, weight)
+                """INSERT INTO hosts (hostname, weight) VALUES (?, ?)""", (host, weight)
             )
 
     rffmpeg_click.add_command(rffmpeg_click_add)
@@ -625,17 +690,16 @@ def run_control(config):
             field = "hostname"
 
         with dbconn(config) as cur:
-            entry = cur.execute("SELECT * FROM hosts WHERE {} = ?".format(field), (host,)).fetchall()
+            entry = cur.execute(
+                "SELECT * FROM hosts WHERE {} = ?".format(field), (host,)
+            ).fetchall()
             if len(entry) < 1:
                 fail("No hosts found to delete!")
 
             click.echo("Deleting {} host(s):".format(len(entry)))
             for h in entry:
                 click.echo("\tID: {}\tHostname: {}".format(h[0], h[1]))
-                cur.execute(
-                    """DELETE FROM hosts WHERE id = ?""",
-                    (h[0],)
-                )
+                cur.execute("""DELETE FROM hosts WHERE id = ?""", (h[0],))
 
     rffmpeg_click.add_command(rffmpeg_click_remove)
 
@@ -646,7 +710,7 @@ def run_control(config):
         "follow_flag",
         is_flag=True,
         default=False,
-        help="Follow new log entries instead of seeing current log entries."
+        help="Follow new log entries instead of seeing current log entries.",
     )
     def rffmpeg_click_log(follow_flag):
         """
@@ -655,7 +719,7 @@ def run_control(config):
         if follow_flag:
             with open(config["logfile"]) as file_:
                 # Go to the end of file
-                file_.seek(0,2)
+                file_.seek(0, 2)
                 while True:
                     curr_position = file_.tell()
                     line = file_.readline()
@@ -685,7 +749,11 @@ if __name__ == "__main__":
         run_control(config)
     else:
         if not Path(config["db_path"]).is_file():
-            fail("Failed to find database '{}' - did you forget to run 'rffmpeg init'?".format(config["db_path"]))
+            fail(
+                "Failed to find database '{}' - did you forget to run 'rffmpeg init'?".format(
+                    config["db_path"]
+                )
+            )
 
         ffmpeg_args = all_args[1:]
         run_ffmpeg(config, ffmpeg_args)
