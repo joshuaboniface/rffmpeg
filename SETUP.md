@@ -1,6 +1,6 @@
 # Example Setup Guide
 
-This example setup is the one I use for `rffmpeg` with Jellyfin. It uses 2 servers: a media server running Jellyfin called `jellyfin1`, and a remote transcode server called `transcode1`. Both systems run Debian GNU/Linux, though the commands below should also work on Ubuntu. Throughout this guide I assume you are running as an unprivileged user with `sudo` privileges.
+This example setup is the one I use for `rffmpeg` with Jellyfin. It uses 2 servers: a media server running Jellyfin called `jellyfin1`, and a remote transcode server called `transcode1`. Both systems run Debian GNU/Linux, though the commands below should also work on Ubuntu. Throughout this guide I assume you are running as an unprivileged user with `sudo` privileges (i.e. in the group `sudo`). Basic knowledge of Linux CLI usage is assumed.
 
 This guide is provided as a basic starting point - there are myriad possible combinations of systems, and I try to keep `rffmpeg` quite flexible. Feel free to experiment.
 
@@ -40,18 +40,21 @@ This guide is provided as a basic starting point - there are myriad possible com
    jellyfin1 $ sudo -u jellyfin cp -a ${jellyfin_data_path}/.ssh/id_${keytype}.pub ${jellyfin_data_path}/.ssh/authorized_keys
    ```
 
+   It is important that you do not alter the permissions under this `.ssh` directory or this can cause SSH to fail later. The SSH *must* occur as the `jellyfin` user for this to work.
+
 1. Scan and save the SSH host key of the transcode server(s), to avoid a prompt later:
 
    ```
    jellyfin1 $ ssh-keyscan transcode1 | sudo -u jellyfin tee -a ${jellyfin_data_path}/.ssh/known_hosts
    ```
 
-   * **NOTE:** Ensure you use the exact name here that you will use in `rffmpeg.yml` in the next step. If this is an FQDN (e.g. `jellyfin1.mydomain.tld`) or an IP (e.g. `192.168.0.101`) instead of a short name, use that instead in this command, or repeat it for every possible option (it doesn't hurt).
+   * **NOTE:** Ensure you use the exact name here that you will use in `rffmpeg`. If this is an FQDN (e.g. `jellyfin1.mydomain.tld`) or an IP (e.g. `192.168.0.101`) instead of a short name, use that instead in this command, or repeat it for every possible option (it doesn't hurt).
 
-1. Install the required dependencies of `rffmpeg`:
+1. Install the required Python3 dependencies of `rffmpeg`:
 
    ```
    jellyfin1 $ sudo apt -y install python3-yaml
+   jellyfin1 $ sudo apt -y install python3-click
    jellyfin1 $ sudo apt -y install python3-subprocess
    ```
 
@@ -61,20 +64,26 @@ This guide is provided as a basic starting point - there are myriad possible com
 
    ```
    jellyfin1 $ git clone https://github.com/joshuaboniface/rffmpeg  # or download the files manually
-   jellyfin1 $ sudo cp rffmpeg/rffmpeg.py /usr/local/bin/rffmpeg.py
-   jellyfin1 $ sudo chmod +x /usr/local/bin/rffmpeg.py
-   jellyfin1 $ sudo ln -s /usr/local/bin/rffmpeg.py /usr/local/bin/ffmpeg
-   jellyfin1 $ sudo ln -s /usr/local/bin/rffmpeg.py /usr/local/bin/ffprobe
+   jellyfin1 $ sudo cp rffmpeg/rffmpeg /usr/local/bin/rffmpeg
+   jellyfin1 $ sudo chmod +x /usr/local/bin/rffmpeg
+   jellyfin1 $ sudo ln -s /usr/local/bin/rffmpeg /usr/local/bin/ffmpeg
+   jellyfin1 $ sudo ln -s /usr/local/bin/rffmpeg /usr/local/bin/ffprobe
    ```
 
-1. Create a directory for the `rffmpeg` configuration at `/etc/rffmpeg`, then copy `rffmpeg.yml.sample` to `/etc/rffmpeg/rffmpeg.yml` and edit it to suit your needs.
+1. Create a directory for the `rffmpeg` configuration at `/etc/rffmpeg`, then copy `rffmpeg.yml.sample` to `/etc/rffmpeg/rffmpeg.yml` and edit it to suit your needs if required. Generally, if you're following this guide exactly, you will not need to adjust anything in `rffmpeg.yml`.
+
    ```
    jellyfin1 $ sudo mkdir -p /etc/rffmpeg
    jellyfin1 $ sudo cp rffmpeg/rffmpeg.yml.sample /etc/rffmpeg/rffmpeg.yml
-   jellyfin1 $ sudo $EDITOR /etc/rffmpeg/rffmpeg.yml  # edit it to suit your needs
+   jellyfin1 $ sudo $EDITOR /etc/rffmpeg/rffmpeg.yml  # if required
    ```
 
-   Generally, if you're following this guide exactly, the only part that needs to be modified is the `rffmpeg` -> `remote` -> `hosts` section, where you define the target hosts. For more detail on weights, see the main [README.md](README.md#remote-hosts).
+1. Initialize `rffmpeg` (note the `sudo` command) and add at least one remote host to it. You can add multiple hosts now or later, set weights of hosts, and add a host more than once. For full details see the [main README](README.md).
+
+   ```
+   jellyfin1 $ sudo rffmpeg init --yes
+   jellyfin1 $ rffmpeg add --weight 1 gpu1
+   ```
 
 1. Install the NFS kernel server. We will use NFS to export the various required directories so the transcode machine can read from and write to them.
 

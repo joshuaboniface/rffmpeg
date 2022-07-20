@@ -10,109 +10,95 @@
 
 ## Quick usage
 
-1. Install the required Python 3 dependencies `yaml` and `subprocess` (`sudo apt install python3-yaml python3-subprocess` in Debian).
+1. Install the required Python 3 dependencies: `click`, `yaml` and `subprocess` (`sudo apt install python3-click python3-yaml python3-subprocess` in Debian).
 
 1. Create the directory `/etc/rffmpeg`.
 
-1. Copy the `rffmpeg.yml.sample` file to `/etc/rffmpeg/rffmpeg.yml` and edit it to suit your needs.
+1. Copy the `rffmpeg.yml.sample` file to `/etc/rffmpeg/rffmpeg.yml` and edit it to suit your needs if required.
 
-1. Install `rffmpeg.py` somewhere useful, for instance at `/usr/local/bin/rffmpeg.py`.
+1. Install `rffmpeg` somewhere useful, for instance at `/usr/local/bin/rffmpeg`.
 
-1. Create symlinks for the command names `ffmpeg` and `ffprobe` to `rffmpeg.py`, for example `sudo ln -s /usr/local/bin/rffmpeg.py /usr/local/bin/ffmpeg` and `sudo ln -s /usr/local/bin/rffmpeg.py /usr/local/bin/ffprobe`.
+1. Create symlinks for the command names `ffmpeg` and `ffprobe` to `rffmpeg`, for example `sudo ln -s /usr/local/bin/rffmpeg /usr/local/bin/ffmpeg` and `sudo ln -s /usr/local/bin/rffmpeg /usr/local/bin/ffprobe`.
 
-1. Set your media program to use `rffmpeg.py` via the symlink names created above, instead of any other `ffmpeg` binary.
+1. Initialize the database and add a target host, for example `sudo rffmpeg init && rffmpeg add myhost.domain.tld`.
+
+1. Set your media program to use `rffmpeg` via the `ffmpeg` symlink name created above, instead of any other `ffmpeg` binary.
 
 1. Profit!
 
-For more detailed instructions, including what must be done to ensure data can be passed between the servers, please see [the SETUP guide](SETUP.md).
+For a comprehensive installation tutorial based on a reference setup, please see [the SETUP guide](SETUP.md).
 
-## rffmpeg options and caveats
+## Important Considerations
 
-The `rffmpeg.yml.sample` is self-documented for the most part. Some additional important information you might need is presented below.
+### The rffmpeg Configuration file
 
-### Remote hosts
+The rffmpeg configuration file located at `rffmpeg.yml.sample` is an example that shows all default options. Even though this file is effectively "empty", it *must* be present at `/etc/rffmpeg/rffmpeg.yml` or at an alternative location specified by the environment variable `RFFMPEG_CONFIG`; the latter is only useful for testing, as media programs like Jellyfin provide no way to specify this.
 
-rffmpeg supports setting multiple hosts. It keeps state in `/run/shm/rffmpeg` of all running processes, and these state files are used during rffmpeg's initialization in order to determine the optimal target host. rffmpeg will run through these hosts sequentially, choosing the one with the fewest running rffmpeg jobs. This helps distribute the transcoding load across multiple servers, and can also provide redundancy if one of the servers is offline - rffmpeg will detect if a host is unreachable and set it "bad" for the remainder of the run, thus skipping it until the process completes.
+To override a default option, simply uncomment the relevant line and adjust it to suit your needs. For those using [Jellyfin](https://jellyfin.org) and following the [SETUP guide](SETUP.md), no default options will need to be changed.o
 
-Hosts can also be assigned weights (see `rffmpeg.yml.sample` for an example) that allow the host to take on that many times the number of active processes versus weight-1 hosts. The `rffmpeg` process does a floor division of the number of active processes on a host with that host weight to determine its "weighted [process] count", which is then used instead to determine the lease-loaded host to use. Note that `rffmpeg` does not take into account actual system load, etc. when determining which host to use; it treats each running command equally regardless of how intensive it actually is.
+Each option has an explanatory comment above it detailing its purpose.
 
-#### Host lists
+Since the configuration file is YAML, ensure that you do not use "Tab" characters inside of it, only spaces.
 
-Hosts are specified as a YAML list in the relevant section of `rffmpeg.yml`, with one list entry per target. A single list entry can be specfied in one of two ways. Either a direct list value of the hostame/IP:
+### Initializing Rffmpeg
 
-```
-- myhostname.domain.tld
-```
+After first installing rffmpeg, ensure you initialize the database with the `sudo rffmpeg init` command. Note that `sudo` is required here to create the required data paths, but afterwards, `rffmpeg` can be run by anyone in the configured group.
 
-Or as a fully expanded `name:`/`weight:` pair.
+Rffmpeg is a Click-based application; thus, all commands have a `-h` or `--help` flag to show usage and additional options that may be specified.
 
-```
-- name: myhostname.domain.tld
-  weight: 2
-```
+### Viewing Status
 
-The first, direct list value formatting implies `weight: 1`. Examples of both styles can be found in the same configuration.
+Once installed and initialized, the status of the rffmpeg system can be viewed with the command `rffmpeg status`. This will show all configured target hosts, their states, and any active commands being run.
 
-You can get creative with this list, especially since `rffmpeg` always checks the list in order to find the next available host. For an example of a complex setup, if you had 3 hosts, and wanted 1+2+2 processes, the following would be the default way to acheive this:
+### Adding or Removing Target Hosts
 
-```
-- name: host1
-  weight: 1
-- name: host2
-  weight: 2
-- name: host3
-  weight: 2
-```
+To add a target host, use the command `rffmpeg add`. This command takes the optional `-w`/`--weight` flag to adjust the weight of the target host (see below). A host can be added more than once.
 
-This would however spread processes out like this, which might work well, but might not for some usecases:
+To remove a target host, use the command `rffmpeg remove`. This command takes either a target host name/IP, which affects all instances of that name, or a specific host ID. Removing an in-use target host will not terminate any running processes, though it may result in undefined behaviour within rffmpeg. Before removing a host it is best to ensure there is nothing using it.
 
-```
-proc1: host1
-proc2: host2
-proc3: host2
-proc4: host3
-proc5: host3
-proc6: host1
-etc.
-```
-
-You could instead specify the hosts like this:
-
-```
-- host1
-- host2
-- host3
-- host2
-- host3
-```
-
-Which would instead give a process spread like:
-
-```
-proc1: host1
-proc2: host2
-proc3: host3
-proc4: host2
-proc5: host3
-proc6: host1
-etc.
-```
-
-Experiment with the ordering based on your load and usecase.
-
-#### Localhost and fallback
+### Localhost and Fallback
 
 If one of the hosts in the config file is called "localhost", rffmpeg will run locally without SSH. This can be useful if the local machine is also a powerful transcoding device.
 
 In addition, rffmpeg will fall back to "localhost" should it be unable to find any working remote hosts. This helps prevent situations where rffmpeg cannot be run due to none of the remote host(s) being available.
 
-In both cases, note that, if hardware acceleraton is configured, it *must* be available on the local host as well, or the `ffmpeg` commands will fail. There is no easy way around this without rewriting flags, and this is currently out-of-scope for `rffmpeg`. You should always use a lowest-common-denominator approach when deciding on what additional option(s) to enable, such that any configured host can run any process.
+In both cases, note that, if hardware acceleraton is configured, it *must* be available on the local host as well, or the `ffmpeg` commands will fail. There is no easy way around this without rewriting arguments, and this is currently out-of-scope for `rffmpeg`. You should always use a lowest-common-denominator approach when deciding on what additional option(s) to enable, such that any configured host can run any process.
 
-The exact path to the local `ffmpeg` and `ffprobe` binaries can be overridden in the configuration, should their paths not match those of the remote system(s). If these options are not specified, the remote paths are used.
+The exact path to the local `ffmpeg` and `ffprobe` binaries can be overridden in the configuration, should their paths not match those of the remote system(s).
 
-### Terminating rffmpeg
+### Target Host Selection
 
-When running rffmpeg manually, *do not* exit it with `Ctrl+C`. Doing so will likely leave the `ffmpeg` process running on the remote machine. Instead, enter `q` and a newline ("Enter") into the rffmpeg process, and this will terminate the entire command cleanly. This is the method that Jellyfin uses to communicate the termination of an `ffmpeg` process.
+When more than one target host is present, rffmpeg uses the following rules to select a new host:
+
+1. Any hosts marked `bad` are ignored until that marking is cleared.
+
+1. All remaining hosts are iterated through in an indetermine order (Python dictionary with root key as the host ID). For each host:
+
+   a. If the host is not `localhost`/`127.0.0.1`, it is tested to ensure it is reachable (responds to `ffmpeg -version` over SSH). If it is not reachable, it is marked `bad` for the duration of this processes' runtime and skipped.
+
+   b. If the host is `idle` (has no running processes), it is immediately chosen and the iteration stops.
+
+   c. If it is active, it is checked against the host with the current fewest number of processes, adjusted for host weight. If it has the fewest, it takes over this role.
+
+1. Once all hosts have been iterated through, at least one host should have been chosen: either the first `idle` host, or the host with the fewest number of active processes. Rffmpeg will then begin running against this host.
+
+### Target Host Weights and Duplicated Target Hosts
+
+When adding a host to rffmpeg, a weight can be specified. Weights are used during the calculation of the fewest number of processes among hosts. The actual number of processes running on the host is floor divided (rounded down to the nearest divisible integer) by the weight to give a "weighted count", which is then used in the determination. This option allows one host to take on more processes than other nodes, as it will be chosen as the "least busy" host more often.
+
+For example, consider two hosts: `host1` with weight 1, and `host2` with weight 5. `host2` would have its actual number of processes floor divided by `5`, and thus any number of processes under `5` would count as `0`, any number of processes between `5` and `10` would count as `1`, and so on, resulting in `host2` being chosen over `host1` even if it had several processes. Thus, `host2` would on average handle 5x more `ffmpeg` processes than `host1` would.
+
+Host weighting is a fairly blunt instrument, and only becomes important when many simultaneous `ffmpeg` processes/transcodes are occurring at once. Generally leaving all hosts at weight 1 would be sufficient for most usecases.
+
+Furthermore, it is possible to add a host of the same name more than once in the `rffmpeg add` command. This has a very similar, but subtly different, effect from setting a higher weight. A host present in the list is more likely to be seen before another host, and thus this can further influence the desired target.
+
+### `bad` Hosts
+
+As mentioned above under [Target Host Selection](README.md#target-host-selection), a host can be marked `bad` if it does not respond to an `ffmpeg -version` command in at least 1 second. This can happen because a host is offline, unreachable, overloaded, or otherwise unresponsive.
+
+Once a host is marked `bad`, it will remain so for as long as the `rffmpeg` process that marked it `bad` is running. This can last from a few seconds to several tens of minutes. During this time, any new `rffmpeg` processes that start will see the host marked as `bad` and thus skip it for target selection. Once the marking `rffmpeg` process completes or is terminated, the `bad` status of that host will be cleared, allowing the next run to try it again. This strikes a balance between always retrying known-unresponsive hosts over and over, and ensuring that hosts will eventually be retried.
+
+If for some reason all configured hosts are marked `bad`, fallback will be engaged; see the above section [Localhost and Fallback](README.md#localhost-and-fallback) for details on what occurrs in this situation. An explicit `localhost` host entry cannot be marked `bad`.
 
 ## FAQ
 
@@ -124,11 +110,11 @@ My virtualization setup (multiple 1U nodes with lots of live migration/failover)
 
 This depends on what "layer" you're asking at.
 
-* Media Servers: Jellyfin is officially supported; Emby seems to work fine, with caveats (see [Issue #10](https://github.com/joshuaboniface/rffmpeg/issues/10)); no others have been tested to my knowledge
-* Operating Systems (source): Debian and its derivatives (Ubuntu, Linux Mint, etc.) should all work perfectly; other Linux operating systems should work fine too as the principles are the same; MacOS should work since it has an SSH client built in; Windows might work if it has an SSH client installed
-* Operating Systems (target): Any Linux system which [`jellyfin-ffmpeg`](https://github.com/jellyfin/jellyfin-ffmpeg) supports, which is currently just Debian and Ubuntu; Windows *might* work if you can get an SSH server running on it (see [Issue #17](https://github.com/joshuaboniface/rffmpeg/issues/17))
-* Install Methods for Jellyfin: Native packages/installers/archives are recommended; Docker containers can be made to work by exporting the `/config` path (see [the setup guide](SETUP.md)) but this is slightly more difficult and is not explicitly covered in the guide
-* Install Methods for `rffmpeg`: Direct installation is recommended; a [Docker container to act as an ffmpeg transcode target](https://github.com/BasixKOR/rffmpeg-docker) has been created by @BasixKOR
+* Media Servers: Jellyfin is officially supported; Emby seems to work fine, with caveats (see [Issue #10](https://github.com/joshuaboniface/rffmpeg/issues/10)); no others have been tested to my knowledge.
+* Operating Systems (source): Debian and its derivatives (Ubuntu, Linux Mint, etc.) should all work perfectly; other Linux operating systems should work fine too as the principles are the same; MacOS should work since it has an SSH client built in; Windows will not work as `rffmpeg` depends on some POSIX assumptions internally.
+* Operating Systems (target): Any Linux system which [`jellyfin-ffmpeg`](https://github.com/jellyfin/jellyfin-ffmpeg) supports, which is currently just Debian and Ubuntu; Windows *might* work if you can get an SSH server running on it (see [Issue #17](https://github.com/joshuaboniface/rffmpeg/issues/17)).
+* Install Methods for Jellyfin: Native packages/installers/archives are recommended; Docker containers can be made to work by exporting the `/config` path (see [the setup guide](SETUP.md)) but this is slightly more difficult and is not explicitly covered in the guide.
+* Install Methods for `rffmpeg`: Direct installation is recommended; a [Docker container to act as an ffmpeg transcode target](https://github.com/BasixKOR/rffmpeg-docker) has been created by @BasixKOR.
 
 ### Can `rffmpeg` mangle/alter FFMPEG arguments?
 
@@ -136,9 +122,11 @@ Explicitly *no*. `rffmpeg` is not designed to interact with the arguments that t
 
 This has a number of side effects:
 
- * `rffmpeg` does not know whether hardware acceleration is turned on or not (see above caveats about localhost and fallback)
+ * `rffmpeg` does not know whether hardware acceleration is turned on or not (see above caveats under [Localhost and Fallback](README.md#localhost-and-fallback)
  * `rffmpeg` does not know what media is playing or where it's outputting files to, and cannot alter these paths
  * `rffmpeg` cannot turn on or off special `ffmpeg` options depending on the host selected
+
+Thus it is imperitive that you set up your entire system correctly for `rffmpeg` to work. Please see the [SETUP guide](SETUP.md) for more information.
 
 ### Can `rffmpeg` do Wake-On-LAN or other similar options to turn on a transcode server?
 
@@ -150,7 +138,7 @@ First, run though the setup guide again and make sure that everything is set up 
 
 If the problem persists, please check the [closed issues](https://github.com/joshuaboniface/rffmpeg/issues?q=is%3Aissue+sort%3Aupdated-desc+is%3Aclosed) and see if it's been reported before (if it's regarding Emby and you get an "error 127", see [Issue #10](https://github.com/joshuaboniface/rffmpeg/issues/10)).
 
-If it hasn't, please open a new issue. Ensure you:
+If it hasn't, you can [ask in our chat](https://matrix.to/#/#rffmpeg:matrix.org) or open a new issue. Ensure you:
 
 1. Use a descriptive and useful title that quickly explains the problem.
 
@@ -166,4 +154,4 @@ Absolutely - I'm happy to take pull requests. Though please refer to the "Can `r
 
 ### Can you help me set up my server?
 
-I'm always happy to help, though please ensure you try to follow the setup guide first. I can be found [on Matrix](https://matrix.to/#/@joshuaboniface:bonifacelabs.ca) or via email at `joshua@boniface.me`. Please note though that I may be unresponsive sometimes, though I will get back to you eventually I promise! Please don't open Issues here about setup problems; the Issue tracker is for bugs or feature requests instead.
+I'm always happy to help, though please ensure you try to follow the setup guide first. Support can be found [on Matrix](https://matrix.to/#/#rffmpeg:matrix.org) or via email at `joshua@boniface.me`. Please note though that I may be unresponsive sometimes, though I will get back to you eventually I promise! Please don't open Issues here about setup problems; the Issue tracker is for bugs or feature requests instead.

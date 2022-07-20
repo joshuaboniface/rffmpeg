@@ -1,66 +1,62 @@
 ---
-# Example configuration file for rffmpeg
+# Configuration file for rffmpeg
+#
 # Copy this sample to /etc/rffmpeg/rffmpeg.yml and replace the various attributes
 # with the values for your environment. For more details please see the README.
+#
+# Any commented value represents the default. Uncomment and alter as required.
 
 rffmpeg:
-    # rffmpeg state configuration - YOU SHOULD NOT ALTER THESE
-    state:
-        # Temporary directory to store state
-        tempdir: "/run/shm/rffmpeg"
-
-        # Filename format for state instance files
-        filename: "instance_{pid}.pid"
-
-        # Contents of the state instance file
-        contents: "{host}"
-
-        # Temporary directory to store SSH persistence sockets
-        persistdir: "/run/shm"
-
     # Logging configuration
     logging:
         # Enable or disable file logging
-        file: true
+        #log_to_file: true
 
         # Log messages to this file - ensure the user running rffmpeg can write to it
-        logfile: "/var/log/jellyfin/rffmpeg.log"
+        #logfile: "/var/log/jellyfin/rffmpeg.log"
+
+    # Directory configuration
+    directories:
+        # Persistent directory to store state database
+        #state: "/var/lib/rffmpeg"
+
+        # Temporary directory to store SSH persistence sockets
+        #persist: "/run/shm"
+
+        # The user who should own the state directory and database (the user who normally runs rffmpeg commands)
+        #owner: jellyfin
+
+        # The group who should own the state directory and database (an administrative group)
+        # Use this group to control who is able to run commands like "rrffmpeg status".
+        #group: sudo
 
     # Remote (SSH) configuration
     remote:
-        # A YAML list of remote hosts to connect to; either direct list or name/weight supported
-        hosts:
-            - localhost
-            - name: gpu1
-              weight: 2   # Relative to any non-weighted hosts which have weight 1
-
         # The remote SSH user to connect as
-        user: jellyfin
+        #user: jellyfin
 
         # How long to persist SSH sessions (0 to disable)
-        persist: 300
+        #persist: 300
 
         # A YAML list of additional SSH arguments (e.g. private keys),
         # one line per space-separated argument element.
-        args: 
-            - "-i"
-            - "/var/lib/jellyfin/.ssh/id_rsa"
-
+        #args: 
+        #    - "-i"
+        #    - "/var/lib/jellyfin/id_rsa"
 
     # Remote command configuration
     commands:
-        # By default rffmpeg uses $PATH to find the "ssh" program; use this option to set a full path
-        # to an SSH binary if you want to override the default.
-        ssh: "ssh"
+        # The path (either full or in $PATH) to the SSH binary.
+        #ssh: "/usr/bin/ssh"
 
         # A YAML list of prefixes to the ffmpeg command (e.g. sudo, nice, etc.),
         # one line per space-separated command element.
-        pre:
-            - ""
+        #pre:
+        #    - ""
 
         # The (remote) ffmpeg and ffprobe command binary paths
-        ffmpeg: "/usr/lib/jellyfin-ffmpeg/ffmpeg"
-        ffprobe: "/usr/lib/jellyfin-ffmpeg/ffprobe"
+        #ffmpeg: "/usr/lib/jellyfin-ffmpeg/ffmpeg"
+        #ffprobe: "/usr/lib/jellyfin-ffmpeg/ffprobe"
 
         # An optional local fallback ffmpeg and ffprobe, if you wish this to be different from the above paths
         #fallback_ffmpeg: "/usr/lib/jellyfin-ffmpeg/ffmpeg"
