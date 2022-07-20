@@ -134,9 +134,9 @@ Explicitly *no*. `rffmpeg` is not designed to interact with the arguments that t
 
 This has a number of side effects:
 
- * `rffmpeg` does not know whether hardware acceleration is turned on or not (see above caveats under [Localhost and Fallback](README.md#localhost-and-fallback)
- * `rffmpeg` does not know what media is playing or where it's outputting files to, and cannot alter these paths
- * `rffmpeg` cannot turn on or off special `ffmpeg` options depending on the host selected
+ * `rffmpeg` does not know whether hardware acceleration is turned on or not (see above caveats under [Localhost and Fallback](README.md#localhost-and-fallback)).
+ * `rffmpeg` does not know what media is playing or where it's outputting files to, and cannot alter these paths.
+ * `rffmpeg` cannot turn on or off special `ffmpeg` options depending on the host selected.
 
 Thus it is imperitive that you set up your entire system correctly for `rffmpeg` to work. Please see the [SETUP guide](SETUP.md) for more information.
 
