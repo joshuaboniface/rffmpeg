@@ -34,6 +34,7 @@ from pwd import getpwnam
 from re import search
 from sqlite3 import connect as sqlite_connect
 from subprocess import run
+from time import sleep
 
 
 # Set up the logger
@@ -637,6 +638,37 @@ def run_control(config):
                 )
 
     rffmpeg_click.add_command(rffmpeg_click_remove)
+
+    @click.command(name="log", short_help="View the rffmpeg log.")
+    @click.option(
+        "-f",
+        "--follow",
+        "follow_flag",
+        is_flag=True,
+        default=False,
+        help="Follow new log entries instead of seeing current log entries."
+    )
+    def rffmpeg_click_log(follow_flag):
+        """
+        View the rffmpeg log file.
+        """
+        if follow_flag:
+            with open(config["logfile"]) as file_:
+                # Go to the end of file
+                file_.seek(0,2)
+                while True:
+                    curr_position = file_.tell()
+                    line = file_.readline()
+                    if not line:
+                        file_.seek(curr_position)
+                        sleep(0.1)
+                    else:
+                        click.echo(line, nl=False)
+        else:
+            with open(config["logfile"], "r") as logfh:
+                click.echo_via_pager(logfh.readlines())
+
+    rffmpeg_click.add_command(rffmpeg_click_log)
 
     return rffmpeg_click(obj={})
 
