@@ -92,7 +92,7 @@ When more than one target host is present, `rffmpeg` uses the following rules to
 
    c. If the host is `active` (has at least one running process), it is checked against the host with the current fewest number of processes, adjusted for host weight. If it has the fewest, it takes over this role.
 
-1. Once all hosts have been iterated through, at least one host should have been chosen: either the first `idle` host, or the host with the fewest number of active processes. `rffmpeg` will then begin running against this host. If no valid hosts were found, `localhost`is used (see section [Localhost and Fallback](README.md#localhost-and-fallback) above).
+1. Once all hosts have been iterated through, at least one host should have been chosen: either the first `idle` host, or the host with the fewest number of active processes. `rffmpeg` will then begin running against this host. If no valid target host was found, `localhost`is used (see section [Localhost and Fallback](README.md#localhost-and-fallback) above).
 
 ### Target Host Weights and Duplicated Target Hosts
 
