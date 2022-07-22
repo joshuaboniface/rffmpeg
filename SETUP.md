@@ -1,6 +1,6 @@
 # Example Setup Guide
 
-This example setup is the one I use for `rffmpeg` with Jellyfin. It uses 2 servers: a media server running Jellyfin called `jellyfin1`, and a remote transcode server called `transcode1`. Both systems run Debian GNU/Linux, though the commands below should also work on Ubuntu. Throughout this guide I assume you are running as an unprivileged user with `sudo` privileges (i.e. in the group `sudo`). Basic knowledge of Linux CLI usage is assumed.
+This example setup is the one I use for `rffmpeg` with Jellyfin. It uses 2 servers: a media server running Jellyfin called `jellyfin1`, and a remote transcode server called `transcode1`. Both systems run Debian GNU/Linux, though the commands below should also work on Ubuntu. Throughout this guide I assume you are running as an unprivileged user with `sudo` privileges (i.e. in the group `sudo`). Basic knowledge of Linux CLI usage is assumed. Whenever a verbatim command is specified, it will be prefixed by the relevant host to run it on (either `jellyfin1` or `transcode1`) and then a `$` prompt indicator.
 
 This guide is provided as a basic starting point - there are myriad possible combinations of systems, and I try to keep `rffmpeg` quite flexible. Feel free to experiment.
 
