@@ -70,11 +70,11 @@ The `rffmpeg` CLI offers a convenient way to view the log file. Use `rffmpeg log
 
 ### Localhost and Fallback
 
-If one of the hosts in the config file is called "localhost", `rffmpeg` will run locally without SSH. This can be useful if the local machine is also a powerful transcoding device.
+If one of the configured target hosts is called `localhost` or `127.0.0.1`, `rffmpeg` will run the `ffmpeg`/`ffprobe` commands locally without SSH. This can be useful if the local machine is also a powerful transcoding device, but you still want to offload some transcoding jobs to other machines.
 
-In addition, `rffmpeg` will fall back to "localhost" should it be unable to find any working remote hosts. This helps prevent situations where `rffmpeg` cannot be run due to none of the remote host(s) being available.
+In addition, `rffmpeg` will fall back to `localhost` automatically, even if it is not explicitly configured, should it be unable to find any working remote hosts. This helps prevent situations where `rffmpeg` cannot be run due to none of the remote host(s) being available.
 
-In both cases, note that, if hardware acceleration is configured, it *must* be available on the local host as well, or the `ffmpeg` commands will fail. There is no easy way around this without rewriting arguments, and this is currently out-of-scope for `rffmpeg`. You should always use a lowest-common-denominator approach when deciding on what additional option(s) to enable, such that any configured host can run any process.
+In both cases, note that, if hardware acceleration is configured, it *must* be available on the local host as well, or the `ffmpeg` commands will fail. There is no easy way around this without rewriting arguments, and this is currently out-of-scope for `rffmpeg`. You should always use a lowest-common-denominator approach when deciding on what additional option(s) to enable, such that any configured host can run any process, or accept that fallback will not work if all remote hosts are unavailable.
 
 The exact path to the local `ffmpeg` and `ffprobe` binaries can be overridden in the configuration, should their paths not match those of the remote system(s).
 
