@@ -105,7 +105,7 @@ This guide is provided as a basic starting point - there are myriad possible com
    * Note the security options of NFS. It will limit mounts to the IP addresses specified. If your home network is secure, you can use the entire network, e.g. `192.168.0.0/24`, but I would recommend determining the exact IP of your transcode server(s) and use them explicitly, e.g. for this example `192.168.0.101` and `192.168.0.102`.
    * The `sync` option is very important here. Jellyfin (and presumably Emby) determines that the next chunk is ready by waiting on inotifies in this directory (I think). Thus, we'd want the client to always do an `fsync` call after every write or the server might miss chunks which results in poor playback performance.
    * For the above reason, it's also very important that you export *from* the Jellyfin server and not from the transcode server.
-   * If your media is local to the Jellyfin server (and not otherwise mounted via a remote filesystems like NFS, Samba, CephFS, etc.), also add an export for it as well.
+   * If your media is local to the Jellyfin server (and not already mountable on the transcode host via a remote filesystems like NFS, Samba, CephFS, etc.), also add an export for it as well.
 
    An example `/etc/exports` file would look like this:
 
