@@ -116,7 +116,9 @@ This guide is provided as a basic starting point - there are myriad possible com
    # Other examples removed
 
    # jellyfin_data_path   first host                                                  second host, etc.
-   /var/lib/jellyfin      192.168.0.101/32(rw,sync,no_subtree_check,no_root_squash)   192.168.0.102(rw,sync,no_subtree_check,no_root_squash) 
+   /var/lib/jellyfin      192.168.0.101/32(rw,sync,no_subtree_check,no_root_squash)   192.168.0.102/32(rw,sync,no_subtree_check,no_root_squash) 
+   # Local media path if required
+   /srv/mymedia           192.168.0.101/32(rw,sync,no_subtree_check,no_root_squash)   192.168.0.102/32(rw,sync,no_subtree_check,no_root_squash) 
    ```
 
 1. Reload the exports file and ensure the NFS server is properly exporting it now:
