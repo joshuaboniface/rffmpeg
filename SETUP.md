@@ -33,7 +33,7 @@ This guide is provided as a basic starting point - there are myriad possible com
    * `.ssh/`: This doesn't exist yet but will after the next step.
 
 1. Create an SSH keypair to use for `rffmpeg`'s login to the remote server. For ease of use with the following steps, use the Jellyfin service user (`jellyfin`) to create the keypair and store it under its home directory (the Jellyfin data path above). I use `rsa` here but you can substitute `ed25519` instead (avoid `dsa` and `ecdsa` for reasons I won't get into here). Once done, copy the public key to `authorized_keys` which will be used to authenticate the key later.
- 
+
    ```
    jellyfin1 $ sudo -u jellyfin mkdir ${jellyfin_data_path}/.ssh
    jellyfin1 $ sudo chmod 700 ${jellyfin_data_path}/.ssh
@@ -116,9 +116,9 @@ This guide is provided as a basic starting point - there are myriad possible com
    # Other examples removed
 
    # jellyfin_data_path   first host                                                  second host, etc.
-   /var/lib/jellyfin      192.168.0.101/32(rw,sync,no_subtree_check,no_root_squash)   192.168.0.102/32(rw,sync,no_subtree_check,no_root_squash) 
+   /var/lib/jellyfin      192.168.0.101/32(rw,sync,no_subtree_check,no_root_squash)   192.168.0.102/32(rw,sync,no_subtree_check,no_root_squash)
    # Local media path if required
-   /srv/mymedia           192.168.0.101/32(rw,sync,no_subtree_check,no_root_squash)   192.168.0.102/32(rw,sync,no_subtree_check,no_root_squash) 
+   /srv/mymedia           192.168.0.101/32(rw,sync,no_subtree_check,no_root_squash)   192.168.0.102/32(rw,sync,no_subtree_check,no_root_squash)
    ```
 
 1. Reload the exports file and ensure the NFS server is properly exporting it now:
