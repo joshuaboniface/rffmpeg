@@ -120,11 +120,15 @@ def load_config():
     config["remote_args"] = config_remote.get(
         "args", ["-i", "/var/lib/jellyfin/.ssh/id_rsa"]
     )
+    if config["remote_args"] is None:
+        config["remote_args"] = []
     config["persist_time"] = config_remote.get("persist", 300)
 
     # Parse the keys from the commands group
     config["ssh_command"] = config_commands.get("ssh", "/usr/bin/ssh")
     config["pre_commands"] = config_commands.get("pre", [])
+    if config["pre_commands"] is None:
+        config["pre_commands"] = []
     config["ffmpeg_command"] = config_commands.get(
         "ffmpeg", "/usr/lib/jellyfin-ffmpeg/ffmpeg"
     )
