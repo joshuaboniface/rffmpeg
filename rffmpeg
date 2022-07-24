@@ -280,9 +280,14 @@ def get_target_host(config):
             if retcode != 0:
                 # Mark the host as bad
                 with dbconn(config) as cur:
-                    log.info(
+                    log.warning(
                         "Marking host {} as bad due to retcode {}".format(
                             host["hostname"], retcode
+                        )
+                    )
+                    log.info(
+                        "SSH command was: {}".format(
+                            " ".join(test_ssh_command + test_ffmpeg_command)
                         )
                     )
                     cur.execute(
