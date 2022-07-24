@@ -279,22 +279,22 @@ def get_target_host(config):
             )
             if retcode != 0:
                 # Mark the host as bad
+                log.warning(
+                    "Marking host {} as bad due to retcode {}".format(
+                        host["hostname"], retcode
+                    )
+                )
+                log.info(
+                    "SSH command was: {}".format(
+                        " ".join(test_ssh_command + test_ffmpeg_command)
+                    )
+                )
                 with dbconn(config) as cur:
-                    log.warning(
-                        "Marking host {} as bad due to retcode {}".format(
-                            host["hostname"], retcode
-                        )
-                    )
-                    log.info(
-                        "SSH command was: {}".format(
-                            " ".join(test_ssh_command + test_ffmpeg_command)
-                        )
-                    )
                     cur.execute(
                         "INSERT INTO states (host_id, process_id, state) VALUES (?, ?, ?)",
                         (hid, config["current_pid"], "bad"),
                     )
-                    continue
+                continue
 
         # If the host state is idle, we can use it immediately
         if host["current_state"] == "idle":
