@@ -94,7 +94,7 @@ When more than one target host is present, `rffmpeg` uses the following rules to
 
    c. If the host is `active` (has at least one running process), it is checked against the host with the current fewest number of processes, adjusted for host weight. If it has the fewest, it takes over this role.
 
-1. Once all hosts have been iterated through, at least one host should have been chosen: either the first `idle` host, or the host with the fewest number of active processes. `rffmpeg` will then begin running against this host. If no valid target host was found, `localhost` is used (see section [Localhost and Fallback](README.md#localhost-and-fallback) above).
+1. Once all hosts have been iterated through, at least one host should have been chosen: either the first `idle` host, or the host with the fewest number of active processes. `rffmpeg` will then begin running against this host. If no valid target host was found, `localhost` is used (see section [Localhost and Fallback](#localhost-and-fallback) above).
 
 ### Target Host Weights and Duplicated Target Hosts
 
@@ -108,11 +108,11 @@ Furthermore, it is possible to add a host of the same name more than once in the
 
 ### `bad` Hosts
 
-As mentioned above under [Target Host Selection](README.md#target-host-selection), a host can be marked `bad` if it does not respond to an `ffmpeg -version` command in at least 1 second if it is due to be checked as a target for a new `rffmpeg` alias process. This can happen because a host is offline, unreachable, overloaded, or otherwise unresponsive.
+As mentioned above under [Target Host Selection](#target-host-selection), a host can be marked `bad` if it does not respond to an `ffmpeg -version` command in at least 1 second if it is due to be checked as a target for a new `rffmpeg` alias process. This can happen because a host is offline, unreachable, overloaded, or otherwise unresponsive.
 
 Once a host is marked `bad`, it will remain so for as long as the `rffmpeg` process that marked it `bad` is running. This can last anywhere from a few seconds (library scan processes, image extraction) to several tens of minutes (a long video transcode). During this time, any new `rffmpeg` processes that start will see that the host is marked as `bad` and thus skip it for target selection. Once the marking `rffmpeg` process completes or is terminated, the `bad` status of that host will be cleared, allowing the next run to try it again. This strikes a balance between always retrying known-unresponsive hosts over and over (and thus delaying process startup), and ensuring that hosts will eventually be retried.
 
-If for some reason all configured hosts are marked `bad`, fallback will be engaged; see the above section [Localhost and Fallback](README.md#localhost-and-fallback) for details on what occurs in this situation. An explicit `localhost` host entry cannot be marked `bad`.
+If for some reason all configured hosts are marked `bad`, fallback will be engaged; see the above section [Localhost and Fallback](#localhost-and-fallback) for details on what occurs in this situation. An explicit `localhost` host entry cannot be marked `bad`.
 
 ## FAQ
 
@@ -136,7 +136,7 @@ Explicitly *no*. `rffmpeg` is not designed to interact with the arguments that t
 
 This has a number of side effects:
 
- * `rffmpeg` does not know whether hardware acceleration is turned on or not (see above caveats under [Localhost and Fallback](README.md#localhost-and-fallback)).
+ * `rffmpeg` does not know whether hardware acceleration is turned on or not (see above caveats under [Localhost and Fallback](#localhost-and-fallback)).
  * `rffmpeg` does not know what media is playing or where it's outputting files to, and cannot alter these paths.
  * `rffmpeg` cannot turn on or off special `ffmpeg` options depending on the host selected.
 
