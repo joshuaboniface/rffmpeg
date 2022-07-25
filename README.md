@@ -154,11 +154,13 @@ If the problem persists, please check the [closed issues](https://github.com/jos
 
 If it hasn't, you can [ask in our chat](https://matrix.to/#/#rffmpeg:matrix.org) or open a new issue. Ensure you:
 
-1. Use a descriptive and useful title that quickly explains the problem.
+1. Enable debug logging in `rffmpeg.yml` (`logging` -> `debug` to `true`) and re-run any failing or incorrect command(s) to obtain debug-level logs for analysis.
 
-1. Clearly explain in the body of the issue your setup, what is going wrong, and what you expect should be happening. Don't fret if English isn't your first language or anything like that, as long as you are trying to be clear that's what counts!
+1. For issues, use a descriptive and useful title that quickly explains the problem.
 
-1. Include your `rffmpeg.log` and Jellyfin/Emby `ffmpeg-transcode-*.txt` logs.
+1. Clearly explain (in the body of the issue or in your chat message) your setup, what is going wrong, and what you expect should be happening. Don't fret if English isn't your first language or anything like that, as long as you are trying to be clear that's what counts!
+
+1. Include your `rffmpeg.log` and Jellyfin/Emby transcode logs as these are absolutely critical in determining what is going on. Use triple-backticks ("```") to enclose logs inline, both in chat and in issues.
 
 I will probably ask clarifying questions as required; please be prepared to run test commands, etc. as requested and paste the output.
 
