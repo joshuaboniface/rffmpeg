@@ -44,6 +44,8 @@ The `rffmpeg` configuration file located at `rffmpeg.yml.sample` is an example t
 
 To override a default option, simply uncomment the relevant line and adjust it to suit your needs. For those using [Jellyfin](https://jellyfin.org) and following the [SETUP guide](SETUP.md), no default options will need to be changed.
 
+**NOTE:** If you are running into problems with `rffmpeg`, please adjust `logging` -> `debug` to `true` to obtain more detailed logs before requesting help.
+
 Each option has an explanatory comment above it detailing its purpose.
 
 Since the configuration file is YAML, ensure that you do not use "Tab" characters inside of it, only spaces.
