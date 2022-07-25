@@ -280,6 +280,7 @@ def get_target_host(config):
         if host["hostname"] not in ["localhost", "127.0.0.1"]:
             log.debug("Running SSH test")
             test_ssh_command = generate_ssh_command(config, host["hostname"])
+            test_ssh_command.remove("-q")
             test_ffmpeg_command = [config["ffmpeg_command"], "-version"]
             ret = run_command(test_ssh_command + test_ffmpeg_command, PIPE, PIPE, PIPE)
             if ret.returncode != 0:
