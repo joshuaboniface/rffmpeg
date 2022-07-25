@@ -519,6 +519,8 @@ def run_control(config):
             except Exception:
                 fail("Aborting due to failed confirmation.")
 
+        click.echo("Initializing database")
+
         if not Path(config["state_dir"]).is_dir():
             try:
                 os.makedirs(config["state_dir"])
@@ -701,6 +703,7 @@ def run_control(config):
         """
         Add a new host with IP or hostname HOST to the database.
         """
+        click.echo("Adding new host '{}'".format(host))
         with dbconn(config) as cur:
             cur.execute(
                 """INSERT INTO hosts (hostname, weight) VALUES (?, ?)""", (host, weight)
@@ -727,7 +730,7 @@ def run_control(config):
             if len(entry) < 1:
                 fail("No hosts found to delete!")
 
-            click.echo("Deleting {} host(s):".format(len(entry)))
+            click.echo("Removing {} host(s):".format(len(entry)))
             for h in entry:
                 click.echo("\tID: {}\tHostname: {}".format(h[0], h[1]))
                 cur.execute("""DELETE FROM hosts WHERE id = ?""", (h[0],))
