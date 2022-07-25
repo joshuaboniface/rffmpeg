@@ -1,4 +1,4 @@
-# rffmpeg
+
 
 <p align="center">
 <img alt="License: GPLv3+" src="https://img.shields.io/github/license/joshuaboniface/rffmpeg"/>
@@ -127,8 +127,8 @@ This depends on what "layer" you're asking at.
 * Media Servers: Jellyfin is officially supported; Emby seems to work fine, with caveats (see [Issue #10](https://github.com/joshuaboniface/rffmpeg/issues/10)); no others have been tested to my knowledge.
 * Operating Systems (source): Debian and its derivatives (Ubuntu, Linux Mint, etc.) should all work perfectly; other Linux operating systems should work fine too as the principles are the same; MacOS should work since it has an SSH client built in; Windows will not work as `rffmpeg` depends on some POSIX assumptions internally.
 * Operating Systems (target): Any Linux system which [`jellyfin-ffmpeg`](https://github.com/jellyfin/jellyfin-ffmpeg) supports, which is currently just Debian and Ubuntu; Windows *might* work if you can get an SSH server running on it (see [Issue #17](https://github.com/joshuaboniface/rffmpeg/issues/17)).
-* Install Methods for Jellyfin: Native packages/installers/archives are recommended; Docker containers can be made to work by exporting the `/config` path (see [the setup guide](SETUP.md)) but this is slightly more difficult and is not explicitly covered in the guide.
-* Install Methods for `rffmpeg`: Direct installation is recommended; a [Docker container to act as an ffmpeg transcode target](https://github.com/BasixKOR/rffmpeg-docker) has been created by @BasixKOR.
+* Install Methods for Jellyfin: Native packages/installers/archives are recommended; a set of [Jellyfin Docker containers integrating `rffmpeg`](https://github.com/Shadowghost/jellyfin-rffmpeg) has been created by [@Shadowghost](https://github.com/Shadowghost).
+* Install Methods for `rffmpeg`: Direct installation is recommended; a [Docker container to act as an ffmpeg transcode target](https://github.com/BasixKOR/rffmpeg-docker) has been created by [@BasixKOR](https://github.com/BasixKOR).
 
 ### Can `rffmpeg` mangle/alter FFMPEG arguments?
 
