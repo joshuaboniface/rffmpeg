@@ -133,13 +133,13 @@ def load_config():
         "ffmpeg", "/usr/lib/jellyfin-ffmpeg/ffmpeg"
     )
     config["ffprobe_command"] = config_commands.get(
-        "ffprobe", "/usr/lib/jellyfin-ffprobe/ffprobe"
+        "ffprobe", "/usr/lib/jellyfin-ffmpeg/ffprobe"
     )
     config["fallback_ffmpeg_command"] = config_commands.get(
         "fallback_ffmpeg", "/usr/lib/jellyfin-ffmpeg/ffmpeg"
     )
     config["fallback_ffprobe_command"] = config_commands.get(
-        "fallback_ffprobe", "/usr/lib/jellyfin-ffprobe/ffprobe"
+        "fallback_ffprobe", "/usr/lib/jellyfin-ffmpeg/ffprobe"
     )
 
     # Set the database path
@@ -327,7 +327,7 @@ def run_local_ffmpeg(config, ffmpeg_args):
     stdin = sys.stdin
     stderr = sys.stderr
 
-    if cmd_name == "ffprobe":
+    if "ffprobe" in cmd_name:
         # If we're in ffprobe mode use that command and sys.stdout as stdout
         rffmpeg_ffmpeg_command.append(config["fallback_ffprobe_command"])
         stdout = sys.stdout
@@ -375,7 +375,7 @@ def run_remote_ffmpeg(config, target_hid, target_host, ffmpeg_args):
     stdin = sys.stdin
     stderr = sys.stderr
 
-    if cmd_name == "ffprobe":
+    if "ffprobe" in cmd_name:
         # If we're in ffprobe mode use that command and sys.stdout as stdout
         rffmpeg_ffmpeg_command.append(config["ffprobe_command"])
         stdout = sys.stdout
