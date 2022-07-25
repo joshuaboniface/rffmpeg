@@ -108,6 +108,7 @@ def load_config():
     # Parse the keys from the logging group
     config["log_to_file"] = config_logging.get("log_to_file", True)
     config["logfile"] = config_logging.get("logfile", "/var/log/jellyfin/rffmpeg.log")
+    config["logdebug"] = config_logging.get("debug", False)
 
     # Parse the keys from the state group
     config["state_dir"] = config_directories.get("state", "/var/lib/rffmpeg")
@@ -211,28 +212,10 @@ def generate_ssh_command(config, target_host):
     return ssh_command
 
 
-def run_test_command(command):
-    """
-    Execute the test command using subprocess.
-    """
-    log.info("Executing command")
-    p = run(
-        command,
-        shell=False,
-        bufsize=0,
-        universal_newlines=True,
-        stdin=PIPE,
-        stdout=PIPE,
-        stderr=PIPE,
-    )
-    return p
-
-
 def run_command(command, stdin, stdout, stderr):
     """
     Execute the command using subprocess.
     """
-    log.info("Executing command")
     p = run(
         command,
         shell=False,
@@ -242,13 +225,14 @@ def run_command(command, stdin, stdout, stderr):
         stdout=stdout,
         stderr=stderr,
     )
-    return p.returncode
+    return p
 
 
 def get_target_host(config):
     """
     Determine an optimal target host via data on currently active processes and states.
     """
+    log.debug("Determining optimal target host")
     # Select all hosts and active processes from the database
     with dbconn(config) as cur:
         hosts = cur.execute("SELECT * FROM hosts").fetchall()
@@ -267,14 +251,17 @@ def get_target_host(config):
 
         if not current_state:
             current_state = "idle"
+            marking_pid = 'N/A'
         else:
             current_state = current_state[3]
+            marking_pid = current_state[2]
 
         # Create the mappings entry
         host_mappings[hid] = {
             "hostname": hostname,
             "weight": weight,
             "current_state": current_state,
+            "marking_pid": marking_pid,
             "commands": [proc[2] for proc in processes if proc[1] == hid],
         }
 
@@ -283,32 +270,35 @@ def get_target_host(config):
     target_hostname = None
     # For each host in the mapping, let's determine if it is suitable
     for hid, host in host_mappings.items():
+        log.debug("Trying host ID {} '{}'".format(hid, host["hostname"]))
         # If it's marked as bad, continue
         if host["current_state"] == "bad":
+            log.debug("Host previously marked bad by PID {}".format(host['marking_pid']))
             continue
 
         # Try to connect to the host and run a very quick command to determine if it is workable
         if host["hostname"] not in ["localhost", "127.0.0.1"]:
+            log.debug("Running SSH test")
             test_ssh_command = generate_ssh_command(config, host["hostname"])
             test_ffmpeg_command = [config["ffmpeg_command"], "-version"]
-            ret = run_test_command(test_ssh_command + test_ffmpeg_command)
+            ret = run_command(test_ssh_command + test_ffmpeg_command, PIPE, PIPE, PIPE)
             if ret.returncode != 0:
                 # Mark the host as bad
                 log.warning(
                     "Marking host {} as bad due to retcode {}".format(
-                        host["hostname"], retcode
+                        host["hostname"], ret.returncode
                     )
                 )
-                log.info(
+                log.debug(
                     "SSH test command was: {}".format(
                         " ".join(test_ssh_command + test_ffmpeg_command)
                     )
                 )
-                log.info(
-                    "SSH test command stdout: {}".format(ret.stdout.decode("utf8"))
+                log.debug(
+                    "SSH test command stdout: {}".format(ret.stdout)
                 )
-                log.info(
-                    "SSH test command stderr: {}".format(ret.stderr.decode("utf8"))
+                log.debug(
+                    "SSH test command stderr: {}".format(ret.stderr)
                 )
                 with dbconn(config) as cur:
                     cur.execute(
@@ -316,11 +306,13 @@ def get_target_host(config):
                         (hid, config["current_pid"], "bad"),
                     )
                 continue
+            log.debug("SSH test succeeded with retcode {}".format(ret.returncode))
 
         # If the host state is idle, we can use it immediately
         if host["current_state"] == "idle":
             target_hid = hid
             target_hostname = host["hostname"]
+            log.debug("Selecting host as idle")
             break
 
         # Get the modified count of the host
@@ -332,8 +324,9 @@ def get_target_host(config):
             lowest_count = weighted_proc_count
             target_hid = hid
             target_hostname = host["hostname"]
+            log.debug("Selecting host as current lowest proc count (raw count: {}, weighted count: {})".format(raw_proc_count, weighted_proc_count))
 
-    log.info("Found optimal host '{}' (ID '{}')".format(target_hostname, target_hid))
+    log.debug("Found optimal host ID {} '{}'".format(target_hid, target_hostname))
     return target_hid, target_hostname
 
 
@@ -365,7 +358,8 @@ def run_local_ffmpeg(config, ffmpeg_args):
     for arg in ffmpeg_args:
         rffmpeg_ffmpeg_command.append("{}".format(arg))
 
-    log.info("Local command: {}".format(" ".join(rffmpeg_ffmpeg_command)))
+    log.info("Running command on host 'localhost'")
+    log.debug("Local command: {}".format(" ".join(rffmpeg_ffmpeg_command)))
 
     with dbconn(config) as cur:
         cur.execute(
@@ -417,7 +411,8 @@ def run_remote_ffmpeg(config, target_hid, target_host, ffmpeg_args):
         else:
             rffmpeg_ffmpeg_command.append("{}".format(arg))
 
-    log.info(
+    log.info("Running command on host '{}'".format(target_host))
+    log.debug(
         "Remote command: {}".format(
             " ".join(rffmpeg_ssh_command + rffmpeg_ffmpeg_command)
         )
@@ -447,33 +442,38 @@ def run_ffmpeg(config, ffmpeg_args):
     signal.signal(signal.SIGQUIT, cleanup)
     signal.signal(signal.SIGHUP, cleanup)
 
+    if config["logdebug"] is True:
+        logging_level = logging.DEBUG
+    else:
+        logging_level = logging.INFO
+
     if config["log_to_file"]:
         logging.basicConfig(
             filename=config["logfile"],
-            level=logging.INFO,
+            level=logging_level,
             format="%(asctime)s - %(name)s[%(process)s] - %(levelname)s - %(message)s",
         )
     else:
         logging.basicConfig(
-            level=logging.INFO,
+            level=logging_level,
             format="%(asctime)s - %(name)s[%(process)s] - %(levelname)s - %(message)s",
         )
 
-    log.info("Starting rffmpeg with args: {}".format(" ".join(ffmpeg_args)))
+    log.info("Starting rffmpeg as {} with args: {}".format(cmd_name, " ".join(ffmpeg_args)))
 
     target_hid, target_hostname = get_target_host(config)
 
     if not target_hostname or target_hostname == "localhost":
-        retcode = run_local_ffmpeg(config, ffmpeg_args)
+        ret = run_local_ffmpeg(config, ffmpeg_args)
     else:
-        retcode = run_remote_ffmpeg(config, target_hid, target_hostname, ffmpeg_args)
+        ret = run_remote_ffmpeg(config, target_hid, target_hostname, ffmpeg_args)
 
     cleanup()
-    if retcode == 0:
-        log.info("Finished rffmpeg with return code {}".format(retcode))
+    if ret.returncode == 0:
+        log.info("Finished rffmpeg with return code {}".format(ret.returncode))
     else:
-        log.error("Finished rffmpeg with return code {}".format(retcode))
-    exit(retcode)
+        log.error("Finished rffmpeg with return code {}".format(ret.returncode))
+    exit(ret.returncode)
 
 
 def run_control(config):

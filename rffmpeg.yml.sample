@@ -16,6 +16,9 @@ rffmpeg:
         # Ensure the user running rffmpeg can write to this directory.
         #logfile: "/var/log/jellyfin/rffmpeg.log"
 
+        # Show debugging messages
+        #debug: false
+
     # Directory configuration
     directories:
         # Persistent directory to store state database.
