@@ -33,7 +33,7 @@ from pathlib import Path
 from pwd import getpwnam
 from re import search
 from sqlite3 import connect as sqlite_connect
-from subprocess import run
+from subprocess import run, PIPE
 from time import sleep
 
 
@@ -211,6 +211,23 @@ def generate_ssh_command(config, target_host):
     return ssh_command
 
 
+def run_test_command(command):
+    """
+    Execute the test command using subprocess.
+    """
+    log.info("Executing command")
+    p = run(
+        command,
+        shell=False,
+        bufsize=0,
+        universal_newlines=True,
+        stdin=PIPE,
+        stdout=PIPE,
+        stderr=PIPE,
+    )
+    return p
+
+
 def run_command(command, stdin, stdout, stderr):
     """
     Execute the command using subprocess.
@@ -274,10 +291,8 @@ def get_target_host(config):
         if host["hostname"] not in ["localhost", "127.0.0.1"]:
             test_ssh_command = generate_ssh_command(config, host["hostname"])
             test_ffmpeg_command = [config["ffmpeg_command"], "-version"]
-            retcode = run_command(
-                test_ssh_command + test_ffmpeg_command, None, None, None
-            )
-            if retcode != 0:
+            ret = run_test_command(test_ssh_command + test_ffmpeg_command)
+            if ret.returncode != 0:
                 # Mark the host as bad
                 log.warning(
                     "Marking host {} as bad due to retcode {}".format(
@@ -285,9 +300,15 @@ def get_target_host(config):
                     )
                 )
                 log.info(
-                    "SSH command was: {}".format(
+                    "SSH test command was: {}".format(
                         " ".join(test_ssh_command + test_ffmpeg_command)
                     )
+                )
+                log.info(
+                    "SSH test command stdout: {}".format(ret.stdout.decode("utf8"))
+                )
+                log.info(
+                    "SSH test command stderr: {}".format(ret.stderr.decode("utf8"))
                 )
                 with dbconn(config) as cur:
                     cur.execute(
