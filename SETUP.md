@@ -28,9 +28,12 @@ This guide is provided as a basic starting point - there are myriad possible com
 
    The important subdirectories for `rffmpeg`'s operation are:
 
-   * `transcodes/`: used to store on-the-fly transcoding files, and configurable separately in Jellyfin but with `rffmpeg` I recommend leaving it at the default location under the data path.
-   * `data/subtitles/`: used to store on-the-fly extracted subtitles so that they can be reused later.
+   * `transcodes/`: Used to store on-the-fly transcoding files, and configurable separately in Jellyfin but with `rffmpeg` I recommend leaving it at the default location under the data path.
+   * `data/subtitles/`: Used to store on-the-fly extracted subtitles so that they can be reused later.
+   * `cache/`: Used to store cached extracted data.
    * `.ssh/`: This doesn't exist yet but will after the next step.
+
+   **NOTE:** On Docker, these directories are different. The main data directory (our `jellyfin_data_path`) is `/config`, and the cache directory is separate at `/cache`. Both must be exported and mounted on targets for proper operation.
 
 1. Create an SSH keypair to use for `rffmpeg`'s login to the remote server. For ease of use with the following steps, use the Jellyfin service user (`jellyfin`) to create the keypair and store it under its home directory (the Jellyfin data path above). I use `rsa` here but you can substitute `ed25519` instead (avoid `dsa` and `ecdsa` for reasons I won't get into here). Once done, copy the public key to `authorized_keys` which will be used to authenticate the key later.
 

@@ -34,7 +34,7 @@
 
 1. Profit!
 
-For a comprehensive installation tutorial based on a reference setup, please see [the SETUP guide](SETUP.md).
+`rffmpeg` does require a little bit more configuration to work properly however. For a comprehensive installation tutorial based on a reference setup, please see [the SETUP guide](SETUP.md).
 
 ## Important Considerations
 
