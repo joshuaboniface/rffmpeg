@@ -185,7 +185,6 @@ def generate_ssh_command(config, target_host):
     ssh_command.append(config["ssh_command"])
     ssh_command.append("-q")
     ssh_command.append("-t")
-    ssh_command.append("-t")
 
     # Set our connection details
     ssh_command.extend(["-o", "ConnectTimeout=1"])
