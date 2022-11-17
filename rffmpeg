@@ -490,6 +490,9 @@ def run_control(config):
         """
         rffmpeg CLI interface
         """
+        if not Path(config["state_dir"]).is_dir() or not Path(config["db_path"]).is_file():
+            return
+
         # List all DB migrations here
         did_alter_0001AddServername = False
         # Check conditions for migrations
