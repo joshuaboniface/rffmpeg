@@ -733,7 +733,7 @@ def run_control(config):
         "name",
         required=False,
         default=None,
-        help="The name of the host.",
+        help="The name of the host (if different from the HOST).",
     )
     @click.argument("host")
     def rffmpeg_click_add(weight, name, host):
