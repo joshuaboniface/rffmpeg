@@ -268,6 +268,7 @@ def get_target_host(config):
     lowest_count = 9999
     target_hid = None
     target_hostname = None
+    target_servername = None
     # For each host in the mapping, let's determine if it is suitable
     for hid, host in host_mappings.items():
         log.debug("Trying host ID {} '{}'".format(hid, host["hostname"]))
@@ -326,6 +327,7 @@ def get_target_host(config):
             lowest_count = weighted_proc_count
             target_hid = hid
             target_hostname = host["hostname"]
+            target_servername = host["servername"]
             log.debug("Selecting host as current lowest proc count (raw count: {}, weighted count: {})".format(raw_proc_count, weighted_proc_count))
 
     log.debug("Found optimal host ID {} '{}' ({})".format(target_hid, target_hostname, target_servername))
