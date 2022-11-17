@@ -745,7 +745,7 @@ def run_control(config):
         click.echo("Adding new host '{}' ({})".format(host, name))
         with dbconn(config) as cur:
             cur.execute(
-                "INSERT INTO hosts (hostname, weight, servername) VALUES (?, ?, ?)", (hostname, weight, name)
+                "INSERT INTO hosts (hostname, weight, servername) VALUES (?, ?, ?)", (host, weight, name)
             )
 
     rffmpeg_click.add_command(rffmpeg_click_add)
