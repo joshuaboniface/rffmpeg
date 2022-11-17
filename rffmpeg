@@ -240,7 +240,7 @@ def get_target_host(config):
     # Generate a mapping dictionary of hosts and processes
     host_mappings = dict()
     for host in hosts:
-        hid, hostname, weight, server_name = host
+        hid, hostname, weight, servername = host
 
         # Get the latest state
         with dbconn(config) as cur:
@@ -259,7 +259,7 @@ def get_target_host(config):
         host_mappings[hid] = {
             "hostname": hostname,
             "weight": weight,
-            "server_name": server_name,
+            "servername": servername,
             "current_state": current_state,
             "marking_pid": marking_pid,
             "commands": [proc[2] for proc in processes if proc[1] == hid],
@@ -286,8 +286,8 @@ def get_target_host(config):
             if ret.returncode != 0:
                 # Mark the host as bad
                 log.warning(
-                    "Marking host {} - {} as bad due to retcode {}".format(
-                        host["server_name"], host["hostname"], ret.returncode
+                    "Marking host {} ({}) as bad due to retcode {}".format(
+                        host["hostname"], host["servername"], ret.returncode
                     )
                 )
                 log.debug(
@@ -313,7 +313,7 @@ def get_target_host(config):
         if host["current_state"] == "idle":
             target_hid = hid
             target_hostname = host["hostname"]
-            target_server_name = host["server_name"]
+            target_servername = host["servername"]
             log.debug("Selecting host as idle")
             break
 
@@ -328,8 +328,8 @@ def get_target_host(config):
             target_hostname = host["hostname"]
             log.debug("Selecting host as current lowest proc count (raw count: {}, weighted count: {})".format(raw_proc_count, weighted_proc_count))
 
-    log.debug("Found optimal host {} ID {} '{}'".format(target_server_name, target_hid, target_hostname))
-    return target_hid, target_server_name, target_hostname
+    log.debug("Found optimal host ID {} '{}' ({})".format(target_hid, target_hostname, target_servername))
+    return target_hid, target_hostname, target_servername
 
 
 def run_local_ffmpeg(config, ffmpeg_args):
@@ -376,7 +376,7 @@ def run_local_ffmpeg(config, ffmpeg_args):
     return run_command(rffmpeg_ffmpeg_command, stdin, stdout, stderr)
 
 
-def run_remote_ffmpeg(config, target_hid, target_hostname, target_server_name, ffmpeg_args):
+def run_remote_ffmpeg(config, target_hid, target_hostname, target_servername, ffmpeg_args):
     """
     Run ffmpeg against the remote target_hostname.
     """
@@ -413,7 +413,7 @@ def run_remote_ffmpeg(config, target_hid, target_hostname, target_server_name, f
         else:
             rffmpeg_ffmpeg_command.append("{}".format(arg))
 
-    log.info("Running command on host {} '{}'".format(target_server_name, target_hostname))
+    log.info("Running command on host '{}' ({})".format(target_hostname, target_servername))
     log.debug(
         "Remote command: {}".format(
             " ".join(rffmpeg_ssh_command + rffmpeg_ffmpeg_command)
@@ -463,12 +463,12 @@ def run_ffmpeg(config, ffmpeg_args):
 
     log.info("Starting rffmpeg as {} with args: {}".format(cmd_name, " ".join(ffmpeg_args)))
 
-    target_hid, target_server_name, target_hostname = get_target_host(config)
+    target_hid, target_hostname, target_servername = get_target_host(config)
 
     if not target_hostname or target_hostname == "localhost":
         ret = run_local_ffmpeg(config, ffmpeg_args)
     else:
-        ret = run_remote_ffmpeg(config, target_hid, target_hostname, target_server_name, ffmpeg_args)
+        ret = run_remote_ffmpeg(config, target_hid, target_hostname, target_servername, ffmpeg_args)
 
     cleanup()
     if ret.returncode == 0:
@@ -489,7 +489,24 @@ def run_control(config):
         """
         rffmpeg CLI interface
         """
-        pass
+        # List all DB migrations here
+        did_alter_0001AddServername = False
+        # Check conditions for migrations
+        with dbconn(config) as cur:
+            # Migration for new servername (PR #36)
+            if cur.execute("SELECT COUNT(*) AS CNTREC FROM pragma_table_info('hosts') WHERE name='servername'").fetchone()[0] == 0:
+                cur.execute(
+                    "ALTER TABLE hosts ADD servername TEXT NOT NULL DEFAULT 'invalid'"
+                )
+                did_alter_0001AddServername = True
+        # Migration for new servername (PR #36)
+        if did_alter_0001AddServername:
+            with dbconn(config) as cur:
+                for host in cur.execute("SELECT * FROM hosts").fetchall():
+                    if host[3] == 'invalid':
+                        cur.execute(
+                            "UPDATE hosts SET servername = ? WHERE hostname = ?", (host[1], host[1])
+                        )
 
     @click.command(name="init", short_help="Initialize the system.")
     @click.option(
@@ -538,7 +555,7 @@ def run_control(config):
         try:
             with dbconn(config) as cur:
                 cur.execute(
-                    "CREATE TABLE hosts (id INTEGER PRIMARY KEY, hostname TEXT NOT NULL, weight INTEGER DEFAULT 1, server_name TEXT NOT NULL)"
+                    "CREATE TABLE hosts (id INTEGER PRIMARY KEY, hostname TEXT NOT NULL, weight INTEGER DEFAULT 1, servername TEXT NOT NULL)"
                 )
                 cur.execute(
                     "CREATE TABLE processes (id INTEGER PRIMARY KEY, host_id INTEGER, process_id INTEGER, cmd TEXT)"
@@ -592,7 +609,7 @@ def run_control(config):
             }
 
         for host in hosts:
-            hid, hostname, weight, server_name = host
+            hid, hostname, weight, servername = host
 
             # Get the latest state
             with dbconn(config) as cur:
@@ -608,22 +625,22 @@ def run_control(config):
             # Create the mappings entry
             host_mappings[hid] = {
                 "hostname": hostname,
+                "servername": servername,
                 "weight": weight,
-                "server_name": server_name,
                 "current_state": current_state,
                 "commands": [proc for proc in processes if proc[1] == hid],
             }
 
         hostname_length = 9
-        server_name_length = 11
+        servername_length = 11
         hid_length = 3
         weight_length = 7
         state_length = 6
         for hid, host in host_mappings.items():
             if len(host["hostname"]) + 1 > hostname_length:
                 hostname_length = len(host["hostname"]) + 1
-            if len(host["server_name"]) + 1 > server_name_length:
-                server_name_length = len(host["server_name"]) + 1
+            if len(host["servername"]) + 1 > servername_length:
+                servername_length = len(host["servername"]) + 1
             if len(str(hid)) + 1 > hid_length:
                 hid_length = len(str(hid)) + 1
             if len(str(host["weight"])) + 1 > weight_length:
@@ -633,13 +650,13 @@ def run_control(config):
 
         output = list()
         output.append(
-            "{bold}{hostname: <{hostname_length}} {server_name: <{server_name_length}} {hid: <{hid_length}} {weight: <{weight_length}} {state: <{state_length}} {commands}{end_bold}".format(
+            "{bold}{hostname: <{hostname_length}} {servername: <{servername_length}} {hid: <{hid_length}} {weight: <{weight_length}} {state: <{state_length}} {commands}{end_bold}".format(
                 bold="\033[1m",
                 end_bold="\033[0m",
                 hostname="Hostname",
                 hostname_length=hostname_length,
-                server_name="Server name",
-                server_name_length=server_name_length,
+                servername="Servername",
+                servername_length=servername_length,
                 hid="ID",
                 hid_length=hid_length,
                 weight="Weight",
@@ -660,11 +677,11 @@ def run_control(config):
 
             host_entry = list()
             host_entry.append(
-                "{hostname: <{hostname_length}} {server_name: <{server_name_length}} {hid: <{hid_length}} {weight: <{weight_length}} {state: <{state_length}} {commands}".format(
+                "{hostname: <{hostname_length}} {servername: <{servername_length}} {hid: <{hid_length}} {weight: <{weight_length}} {state: <{state_length}} {commands}".format(
                     hostname=host["hostname"],
                     hostname_length=hostname_length,
-                    server_name=host["server_name"],
-                    server_name_length=server_name_length,
+                    servername=host["servername"],
+                    servername_length=servername_length,
                     hid=hid,
                     hid_length=hid_length,
                     weight=host["weight"],
@@ -679,11 +696,11 @@ def run_control(config):
                 if idx == 0:
                     continue
                 host_entry.append(
-                    "{hostname: <{hostname_length}} {server_name: <{server_name_length}} {hid: <{hid_length}} {weight: <{weight_length}} {state: <{state_length}} {commands}".format(
+                    "{hostname: <{hostname_length}} {servername: <{servername_length}} {hid: <{hid_length}} {weight: <{weight_length}} {state: <{state_length}} {commands}".format(
                         hostname="",
                         hostname_length=hostname_length,
-                        server_name="",
-                        server_name_length=server_name_length,
+                        servername="",
+                        servername_length=servername_length,
                         hid="",
                         hid_length=hid_length,
                         weight="",
@@ -714,7 +731,7 @@ def run_control(config):
         "--name",
         "name",
         required=False,
-        default="manual",
+        default=None,
         help="The name of the host.",
     )
     @click.argument("host")
@@ -722,12 +739,12 @@ def run_control(config):
         """
         Add a new host with IP or hostname HOST to the database.
         """
-        click.echo("Adding new {} host '{}'".format(name, host))
-        if name == "manual":
+        if name is None:
             name = host
+        click.echo("Adding new host '{}' ({})".format(host, name))
         with dbconn(config) as cur:
             cur.execute(
-                "INSERT INTO hosts (hostname, weight, server_name) VALUES (?, ?, ?)", (host, weight, name)
+                "INSERT INTO hosts (hostname, weight, servername) VALUES (?, ?, ?)", (hostname, weight, name)
             )
 
     rffmpeg_click.add_command(rffmpeg_click_add)
@@ -736,13 +753,13 @@ def run_control(config):
     @click.argument("host")
     def rffmpeg_click_remove(host):
         """
-        Remove a host with internal ID or IP or hostname or server_name HOST from the database.
+        Remove a host with internal ID or IP or hostname or servername HOST from the database.
         """
         try:
             host = int(host)
             field = "id"
         except ValueError:
-            field = "server_name"
+            field = "servername"
             fieldAlt = "hostname"
 
         with dbconn(config) as cur:
@@ -761,8 +778,8 @@ def run_control(config):
             else:
                 click.echo("Removing {} hosts:".format(len(entry)))
             for host in entry:
-                hid, hostname, weight, server_name = host
-                click.echo("\tID: {}\tHostname: {}\tServer name: {}".format(hid, hostname, server_name))
+                hid, hostname, weight, servername = host
+                click.echo("\tID: {}\tHostname: {}\tServername: {}".format(hid, hostname, servername))
                 cur.execute("DELETE FROM hosts WHERE id = ?", (hid,))
 
     rffmpeg_click.add_command(rffmpeg_click_remove)
