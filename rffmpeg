@@ -442,7 +442,6 @@ def run_ffmpeg(config, ffmpeg_args):
     signal.signal(signal.SIGTERM, cleanup)
     signal.signal(signal.SIGINT, cleanup)
     signal.signal(signal.SIGQUIT, cleanup)
-    signal.signal(signal.SIGKILL, cleanup)
     signal.signal(signal.SIGHUP, cleanup)
 
     if config["logdebug"] is True:
