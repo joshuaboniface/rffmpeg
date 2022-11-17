@@ -608,6 +608,7 @@ def run_control(config):
         if len(fallback_processes) > 0:
             host_mappings[0] = {
                 "hostname": "localhost (fallback)",
+                "servername": "localhost (fallback)",
                 "weight": 0,
                 "current_state": "fallback",
                 "commands": fallback_processes,
