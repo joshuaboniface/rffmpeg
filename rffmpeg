@@ -166,7 +166,7 @@ def cleanup(signum="", frame=""):
     """
     Clean up this processes stored transient data.
     """
-    global config, p
+    global config
 
     with dbconn(config) as cur:
         cur.execute("DELETE FROM states WHERE process_id = ?", (config["current_pid"],))
