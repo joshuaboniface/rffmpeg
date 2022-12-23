@@ -15,7 +15,10 @@ rffmpeg:
         # Log messages to this file.
         # Ensure the user running rffmpeg can write to this directory.
         #logfile: "/var/log/jellyfin/rffmpeg.log"
-
+        
+        # You can add the date to the logfile if you prefer to have one file per day.
+        #logfiledated: false
+        
         # Show debugging messages
         #debug: false
 

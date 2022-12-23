@@ -108,6 +108,11 @@ def load_config():
     # Parse the keys from the logging group
     config["log_to_file"] = config_logging.get("log_to_file", True)
     config["logfile"] = config_logging.get("logfile", "/var/log/jellyfin/rffmpeg.log")
+    config["logfiledated"] =  config_logging.get("logfiledated", False)   
+    if config["logfiledated"] is True:
+        config["logfile"] = config_logging.get("logfile", "/var/log/jellyfin/"+ (datetime.today()).strftime('%Y%m%d') +"_rffmpeg.log")
+    else:
+        config["logfile"] = config_logging.get("logfile", "/var/log/jellyfin/rffmpeg.log")
     config["logdebug"] = config_logging.get("debug", False)
 
     # Parse the keys from the state group
