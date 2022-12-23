@@ -15,6 +15,14 @@ rffmpeg:
         # Log messages to this file.
         # Ensure the user running rffmpeg can write to this directory.
         #logfile: "/var/log/jellyfin/rffmpeg.log"
+        
+        # Use a Jellyfin-logging compatible dated log format, e.g. "20221223_rffmpeg.log"
+        # Supersedes the "logfile" directive above
+        #datedlogfiles: false
+        
+        # Use this base directory for Jellyfin-logging compatible dated log files if you enable "datedlogfiles"
+        # Set this to your Jellyfin logging directory if it differs from the default
+        #datedlogdir: /var/log/jellyfin
 
         # Show debugging messages
         #debug: false
