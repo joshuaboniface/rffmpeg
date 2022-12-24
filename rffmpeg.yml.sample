@@ -22,7 +22,7 @@ rffmpeg:
         
         # Use this base directory for Jellyfin-logging compatible dated log files if you enable "datedlogfiles"
         # Set this to your Jellyfin logging directory if it differs from the default
-        #datedlogdir: /var/log/jellyfin
+        #datedlogdir: "/var/log/jellyfin/"
 
         # Show debugging messages
         #debug: false
