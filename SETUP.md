@@ -109,6 +109,8 @@ This guide is provided as a basic starting point - there are myriad possible com
    * It's quite important to both set `sync` on the transcode host(s), and ensure that the `transcodes` directory is on a real filesystem on the Jellyfin system (i.e. is not a remote filesystem mount itself) which is then exported to the clients. If this is not the case, playback will be very slow to start. I believe the reason for this is that Jellyfin (and presumably Emby) listen for an `inotify` on the directory to know that the playlist is ready for consumption, but I have not confirmed this, and NFS *et al.* do not properly support this.
    * If your media is local to the Jellyfin server (and not already mountable on the transcode host(s) via a remote filesystems like NFS, Samba, CephFS, etc.), also add an export for it as well.
 
+   * If your `transcodes` directory is external to Jellyfin, such as a NAS, then you may experience delays of ~15-60s starting content as NFS uses a file attribute cache that in most applications greatly increases performance, however for this usecase it causes a delay in Jellyfin seeing the `.ts` files. The solution for this is to reduce the NFS cache time by adding `actimeo=1` to your mount command (or fstab), which will set the NFS file attribute cache to 1 second (reducing the NFS delay to ~1-2 seconds.) It is not recommended to use the `noac` flag, which would reduce the NFS delay to ~0, but at the cost of negatively impacting other NFS performance. To verify your mount added the `actimeo=1` parameter correcly `cat /proc/mounts`, which will show `acregmin=1,acregmax=1,acdirmin=1,acdirmax=1` as parameters for your `transcodes` mount. 
+
    An example `/etc/exports` file would look like this:
 
    ```
