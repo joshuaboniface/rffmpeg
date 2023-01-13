@@ -42,18 +42,50 @@ from datetime import datetime
 log = logging.getLogger("rffmpeg")
 
 
+# Use Postgresql if specified, otherwise use SQLite
+DB_TYPE = "SQLITE"
+POSTGRES_HOST = os.getenv("POSTGRES_HOST")
+POSTGRES_DB = os.getenv("POSTGRES_DB")
+POSTGRES_USER = os.getenv("POSTGRES_USER")
+POSTGRES_PASS = os.getenv("POSTGRES_PASS")
+if POSTGRES_HOST != None and POSTGRES_DB != None and POSTGRES_USER != None:
+    DB_TYPE = "POSTGRES"
+    from psycopg2 import connect as postgres_connect
+
+
 # Open a database connection (context manager)
 @contextmanager
 def dbconn(config):
     """
     Open a database connection.
     """
-    conn = sqlite_connect(config["db_path"])
-    conn.execute("PRAGMA foreign_keys = 1")
-    cur = conn.cursor()
-    yield cur
-    conn.commit()
+    if DB_TYPE == "SQLITE":
+        if not Path(config["db_path"]).is_file():
+            fail(
+                "Failed to find database '{}' - did you forget to run 'rffmpeg init' or add all env vars for Postgresql?".format(
+                    config["db_path"]
+                )
+            )
+        log.debug("Using SQLite as database.")
+        conn = sqlite_connect(config["db_path"])
+        conn.execute("PRAGMA foreign_keys = 1")
+        cur = conn.cursor()
+        yield cur
+        conn.commit()
+    elif DB_TYPE == "POSTGRES":
+        try:
+            log.debug("Using Postgresql as database. Connecting...")
+            conn = postgres_connect()
+            cur = conn.cursor()
+            cur.execute('SELECT version()')
+            db_version = cur.fetchone()
+            log.debug("Connected to Postgresql version {}".format(db_version))
+            yield cur
+            conn.commit()
+        except (Exception, psycopg2.DatabaseError) as error:
+            log.error(error)
     conn.close()
+    log.debug("Database connection closed.")
 
 
 def fail(msg):
@@ -73,11 +105,22 @@ def load_config():
     default_config_file = "/etc/rffmpeg/rffmpeg.yml"
     config_file = os.environ.get("RFFMPEG_CONFIG", default_config_file)
 
-    with open(config_file, "r") as cfgfh:
-        try:
-            o_config = yaml.load(cfgfh, Loader=yaml.SafeLoader)
-        except Exception as e:
-            fail("Failed to parse configuration file: {}".format(e))
+    if not Path(config_file).is_file():
+        log.info("No config found in {}. Using default settings.".format(config_file))
+        o_config = {
+            "rffmpeg": {
+                "logging": {},
+                "directories": {},
+                "remote": {},
+                "commands": {}
+            }
+        }
+    else:
+        with open(config_file, "r") as cfgfh:
+            try:
+                o_config = yaml.load(cfgfh, Loader=yaml.SafeLoader)
+            except Exception as e:
+                fail("Failed to parse configuration file: {}".format(e))  
 
     config = dict()
 
@@ -839,13 +882,6 @@ if __name__ == "__main__":
 
     if "rffmpeg" in cmd_name:
         run_control(config)
-    else:
-        if not Path(config["db_path"]).is_file():
-            fail(
-                "Failed to find database '{}' - did you forget to run 'rffmpeg init'?".format(
-                    config["db_path"]
-                )
-            )
 
         ffmpeg_args = all_args[1:]
         run_ffmpeg(config, ffmpeg_args)
