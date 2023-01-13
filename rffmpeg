@@ -882,6 +882,6 @@ if __name__ == "__main__":
 
     if "rffmpeg" in cmd_name:
         run_control(config)
-
+    else:
         ffmpeg_args = all_args[1:]
         run_ffmpeg(config, ffmpeg_args)
