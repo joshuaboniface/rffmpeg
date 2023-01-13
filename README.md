@@ -20,19 +20,19 @@
 
 1. Install the required Python 3 dependencies: `click`, `yaml` and `subprocess` (`sudo apt install python3-click python3-yaml python3-subprocess` in Debian) and optionally install `psycopg2` with `sudo apt install python3-psycopg2` for Postgresql support.
 
-2. Create the directory `/etc/rffmpeg`.
+1. Create the directory `/etc/rffmpeg`.
 
-3. Copy the `rffmpeg.yml.sample` file to `/etc/rffmpeg/rffmpeg.yml` and edit it to suit your needs if required.
+1. Copy the `rffmpeg.yml.sample` file to `/etc/rffmpeg/rffmpeg.yml` and edit it to suit your needs if required.
 
-4. Install `rffmpeg` somewhere useful, for instance at `/usr/local/bin/rffmpeg`.
+1. Install `rffmpeg` somewhere useful, for instance at `/usr/local/bin/rffmpeg`.
 
-5. Create symlinks for the command names `ffmpeg` and `ffprobe` to `rffmpeg`, for example `sudo ln -s /usr/local/bin/rffmpeg /usr/local/bin/ffmpeg` and `sudo ln -s /usr/local/bin/rffmpeg /usr/local/bin/ffprobe`.
+1. Create symlinks for the command names `ffmpeg` and `ffprobe` to `rffmpeg`, for example `sudo ln -s /usr/local/bin/rffmpeg /usr/local/bin/ffmpeg` and `sudo ln -s /usr/local/bin/rffmpeg /usr/local/bin/ffprobe`.
 
-6. Initialize the database and add a target host, for example `sudo rffmpeg init && rffmpeg add myhost.domain.tld`.
+1. Initialize the database and add a target host, for example `sudo rffmpeg init && rffmpeg add myhost.domain.tld`.
 
-7. Set your media program to use `rffmpeg` via the `ffmpeg` symlink name created above, instead of any other `ffmpeg` binary.
+1. Set your media program to use `rffmpeg` via the `ffmpeg` symlink name created above, instead of any other `ffmpeg` binary.
 
-8. Profit!
+1. Profit!
 
 `rffmpeg` does require a little bit more configuration to work properly however. For a comprehensive installation tutorial based on a reference setup, please see [the SETUP guide](SETUP.md).
 
@@ -128,8 +128,9 @@ This depends on what "layer" you're asking at.
 * Operating Systems (source): Debian and its derivatives (Ubuntu, Linux Mint, etc.) should all work perfectly; other Linux operating systems should work fine too as the principles are the same; MacOS should work since it has an SSH client built in; Windows will not work as `rffmpeg` depends on some POSIX assumptions internally.
 * Operating Systems (target): Any Linux system which [`jellyfin-ffmpeg`](https://github.com/jellyfin/jellyfin-ffmpeg) supports, which is currently just Debian and Ubuntu; Windows *might* work if you can get an SSH server running on it (see [Issue #17](https://github.com/joshuaboniface/rffmpeg/issues/17)).
 * Install Methods for Jellyfin: Native packages/installers/archives are recommended; a set of [Jellyfin Docker containers integrating `rffmpeg`](https://github.com/Shadowghost/jellyfin-rffmpeg) has been created by [@Shadowghost](https://github.com/Shadowghost) as well as [another](https://github.com/aleksasiriski/jellyfin-rffmpeg) by [@aleksasiriski](https://github.com/aleksasiriski). In addition to these special docker images you can use linuxserver's image with [this mod](https://github.com/linuxserver/docker-mods/tree/jellyfin-rffmpeg).
-* Install Methods for `rffmpeg`: Direct installation is recommended; a [Docker container to act as an ffmpeg transcode target](https://github.com/BasixKOR/rffmpeg-docker) has been created by [@BasixKOR](https://github.com/BasixKOR) as well as [another](https://github.com/aleksasiriski/rffmpeg-node) by [@aleksasiriski](https://github.com/aleksasiriski).
-* Cloud: [HCloud Rffmpeg](https://github.com/aleksasiriski/hcloud-rffmpeg) script made to read rffmpeg database and spin up more transcode nodes in Hetzner Cloud by [@aleksasiriski](https://github.com/aleksasiriski).
+* Install Methods for `rffmpeg`: Direct installation is recommended; a [Docker container to act as an ffmpeg transcode target](https://github.com/aleksasiriski/rffmpeg-worker) has been created by [@aleksasiriski](https://github.com/aleksasiriski) as well as [another](https://github.com/BasixKOR/rffmpeg-docker) by [@BasixKOR](https://github.com/BasixKOR).
+* Cloud: [HCloud Rffmpeg](https://github.com/aleksasiriski/hcloud-rffmpeg) script made to read rffmpeg database and spin up more transcode nodes in Hetzner Cloud.
+* Kubernetes: A short guide and example yaml files are available [here](https://github.com/aleksasiriski/rffmpeg-worker/tree/main/Kubernetes).
 
 ### Can `rffmpeg` mangle/alter FFMPEG arguments?
 
@@ -145,7 +146,7 @@ Thus it is imperative that you set up your entire system correctly for `rffmpeg`
 
 ### Can `rffmpeg` do Wake-On-LAN or other similar options to turn on a transcode server?
 
-Right now, no. I've thought about implementing this more than once (most recently, in response to [Issue #21](https://github.com/joshuaboniface/rffmpeg/issues/21)) but ultimately I've never though this was worth the complexity and delays in spawning that it would add to the tool. That issue does provide one example of a workaround wrapper script that could accomplish this, but I don't see it being a part of the actual tool itself.
+Right now, not officially. You can use the linuxserver.io [docker mod](https://github.com/linuxserver/docker-mods/tree/jellyfin-rffmpeg). I've thought about implementing this more than once (most recently, in response to [Issue #21](https://github.com/joshuaboniface/rffmpeg/issues/21)) but ultimately I've never though this was worth the complexity and delays in spawning that it would add to the tool. That issue does provide one example of a workaround wrapper script that could accomplish this, but I don't see it being a part of the actual tool itself.
 
 ### I'm getting an error, help!
 
