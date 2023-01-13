@@ -807,7 +807,7 @@ def run_control(config):
     @click.argument("host")
     def rffmpeg_click_remove(host):
         """
-        Remove a host with internal ID or IP or hostname or servername HOST from the database.
+        Remove a host with internal ID/IP/hostname/servername HOST from the database.
         """
         try:
             host = int(host)
@@ -873,7 +873,7 @@ def run_control(config):
     @click.argument("host", required=False, default=None)
     def rffmpeg_click_log(host):
         """
-        Clear all active process and states from the database, optionally limited to a host with internal ID or IP or hostname or servername HOST.
+        Clear all active process and states from the database, optionally limited to a host with internal ID/IP/hostname/servername HOST.
 
         This command is designed to assist in rare error cases whereby stuck process states are present in the database, and should be used sparingly. This will not affect running processes negatively, though rffmpeg will no longer see them as active. It is recommended to run this command only when you are sure that no processes are actually running.
         """
