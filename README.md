@@ -18,21 +18,21 @@
 
 ## Quick usage
 
-1. Install the required Python 3 dependencies: `click`, `yaml` and `subprocess` (`sudo apt install python3-click python3-yaml python3-subprocess` in Debian).
+1. Install the required Python 3 dependencies: `click`, `yaml` and `subprocess` (`sudo apt install python3-click python3-yaml python3-subprocess` in Debian) and optionally install `psycopg2` with `sudo apt install python3-psycopg2` for Postgresql support.
 
-1. Create the directory `/etc/rffmpeg`.
+2. Create the directory `/etc/rffmpeg`.
 
-1. Copy the `rffmpeg.yml.sample` file to `/etc/rffmpeg/rffmpeg.yml` and edit it to suit your needs if required.
+3. Copy the `rffmpeg.yml.sample` file to `/etc/rffmpeg/rffmpeg.yml` and edit it to suit your needs if required.
 
-1. Install `rffmpeg` somewhere useful, for instance at `/usr/local/bin/rffmpeg`.
+4. Install `rffmpeg` somewhere useful, for instance at `/usr/local/bin/rffmpeg`.
 
-1. Create symlinks for the command names `ffmpeg` and `ffprobe` to `rffmpeg`, for example `sudo ln -s /usr/local/bin/rffmpeg /usr/local/bin/ffmpeg` and `sudo ln -s /usr/local/bin/rffmpeg /usr/local/bin/ffprobe`.
+5. Create symlinks for the command names `ffmpeg` and `ffprobe` to `rffmpeg`, for example `sudo ln -s /usr/local/bin/rffmpeg /usr/local/bin/ffmpeg` and `sudo ln -s /usr/local/bin/rffmpeg /usr/local/bin/ffprobe`.
 
-1. Initialize the database and add a target host, for example `sudo rffmpeg init && rffmpeg add myhost.domain.tld`.
+6. Initialize the database and add a target host, for example `sudo rffmpeg init && rffmpeg add myhost.domain.tld`.
 
-1. Set your media program to use `rffmpeg` via the `ffmpeg` symlink name created above, instead of any other `ffmpeg` binary.
+7. Set your media program to use `rffmpeg` via the `ffmpeg` symlink name created above, instead of any other `ffmpeg` binary.
 
-1. Profit!
+8. Profit!
 
 `rffmpeg` does require a little bit more configuration to work properly however. For a comprehensive installation tutorial based on a reference setup, please see [the SETUP guide](SETUP.md).
 
