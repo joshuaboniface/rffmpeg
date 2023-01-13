@@ -18,7 +18,7 @@
 
 ## Quick usage
 
-1. Install the required Python 3 dependencies: `click`, `yaml` and `subprocess` (`sudo apt install python3-click python3-yaml python3-subprocess` in Debian).
+1. Install the required Python 3 dependencies: `click`, `yaml` and `subprocess` (`sudo apt install python3-click python3-yaml python3-subprocess` in Debian) and optionally install `psycopg2` with `sudo apt install python3-psycopg2` for Postgresql support.
 
 1. Create the directory `/etc/rffmpeg`.
 
