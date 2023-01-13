@@ -77,7 +77,7 @@ This guide is provided as a basic starting point - there are myriad possible com
    jellyfin1 $ sudo ln -s /usr/local/bin/rffmpeg /usr/local/bin/ffprobe
    ```
 
-1. Create a directory for the `rffmpeg` configuration at `/etc/rffmpeg`, then copy `rffmpeg.yml.sample` to `/etc/rffmpeg/rffmpeg.yml` and edit it to suit your needs if required. Generally, if you're following this guide exactly, you will not need to adjust anything in `rffmpeg.yml`.
+1. Optional: Create a directory for the `rffmpeg` configuration at `/etc/rffmpeg`, then copy `rffmpeg.yml.sample` to `/etc/rffmpeg/rffmpeg.yml` and edit it to suit your needs if required. Generally, if you're following this guide exactly, you will not need to install this file or adjust anything in in it. If you do require help though, I require debug logging to be enabled via the configuration file, so it's probably best to get this out of the way when installing `rffmpeg`:
 
    ```
    jellyfin1 $ sudo mkdir -p /etc/rffmpeg

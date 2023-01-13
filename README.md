@@ -22,7 +22,7 @@
 
 1. Create the directory `/etc/rffmpeg`.
 
-1. Copy the `rffmpeg.yml.sample` file to `/etc/rffmpeg/rffmpeg.yml` and edit it to suit your needs if required.
+1. Optionally, copy the `rffmpeg.yml.sample` file to `/etc/rffmpeg/rffmpeg.yml` and edit it to suit your needs.
 
 1. Install `rffmpeg` somewhere useful, for instance at `/usr/local/bin/rffmpeg`.
 
@@ -40,11 +40,11 @@
 
 ### The `rffmpeg` Configuration file
 
-The `rffmpeg` configuration file located at `rffmpeg.yml.sample` is an example that shows all default options. Even though this file is effectively "empty", it *must* be present at `/etc/rffmpeg/rffmpeg.yml` or at an alternative location specified by the environment variable `RFFMPEG_CONFIG`; the latter is only useful for testing, as media programs like Jellyfin provide no way to specify this.
+`rffmpeg` will look at `/etc/rffmpeg/rffmpeg.yml` (or a path specified by the `RFFMPEG_CONFIG` environment variable) for a configuration file. If it doesn't find one, defaults will be used instead. You can use this file to override many configurable default values to better fit your environment. The defaults should be sensible for anyone using [Jellyfin](https://jellyfin.org) and following the [SETUP guide](SETUP.md).
 
-To override a default option, simply uncomment the relevant line and adjust it to suit your needs. For those using [Jellyfin](https://jellyfin.org) and following the [SETUP guide](SETUP.md), no default options will need to be changed.
+The example configuration file at `rffmpeg.yml.sample` shows all available options; this file can be copied as-is to the above location and edited to suit your needs; simply uncomment any lines you want to change. Note that if you do specify a file, you *must* ensure that all top-level categories are present or it will error out.
 
-**NOTE:** If you are running into problems with `rffmpeg`, please adjust `logging` -> `debug` to `true` to obtain more detailed logs before requesting help.
+**NOTE:** If you are running into problems with `rffmpeg`, you must use the config file to adjust `logging` -> `debug` to `true` to obtain more detailed logs before requesting help.
 
 Each option has an explanatory comment above it detailing its purpose.
 
