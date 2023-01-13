@@ -44,7 +44,7 @@ log = logging.getLogger("rffmpeg")
 
 # Use Postgresql if specified, otherwise use SQLite
 DB_TYPE = "SQLITE"
-SQL_VAR_SIGN="?"
+SQL_VAR_SIGN = "?"
 POSTGRES_DB = os.environ.get("RFFMPEG_POSTGRES_DB", "rffmpeg")
 POSTGRES_USER = os.environ.get("RFFMPEG_POSTGRES_USER")
 POSTGRES_PASS = os.environ.get("RFFMPEG_POSTGRES_PASS")
@@ -53,13 +53,13 @@ POSTGRES_HOST = os.environ.get("RFFMPEG_POSTGRES_HOST", "localhost")
 
 if POSTGRES_DB != None and POSTGRES_USER != None:
     DB_TYPE = "POSTGRES"
-    SQL_VAR_SIGN="%s"
+    SQL_VAR_SIGN = "%s"
     POSTGRES_CREDENTIALS = {
         "dbname": POSTGRES_DB,
         "user": POSTGRES_USER,
         "password": POSTGRES_PASS,
         "port": int(POSTGRES_PORT),
-        "host": POSTGRES_HOST
+        "host": POSTGRES_HOST,
     }
     from psycopg2 import connect as postgres_connect
     from psycopg2 import DatabaseError as postgres_error
@@ -92,7 +92,7 @@ def dbconn(config):
             log.debug("Using Postgresql as database. Connecting...")
             conn = postgres_connect(**POSTGRES_CREDENTIALS)
             cur = conn.cursor()
-            cur.execute('SELECT version()')
+            cur.execute("SELECT version()")
             db_version = cur.fetchone()
             log.debug("Connected to Postgresql version {}".format(db_version))
             yield cur
@@ -126,19 +126,14 @@ def load_config():
     if not Path(config_file).is_file():
         log.info("No config found in {}. Using default settings.".format(config_file))
         o_config = {
-            "rffmpeg": {
-                "logging": {},
-                "directories": {},
-                "remote": {},
-                "commands": {}
-            }
+            "rffmpeg": {"logging": {}, "directories": {}, "remote": {}, "commands": {}}
         }
     else:
         with open(config_file, "r") as cfgfh:
             try:
                 o_config = yaml.load(cfgfh, Loader=yaml.SafeLoader)
             except Exception as e:
-                fail("Failed to parse configuration file: {}".format(e))  
+                fail("Failed to parse configuration file: {}".format(e))
 
     config = dict()
 
@@ -173,7 +168,12 @@ def load_config():
     config["datedlogfiles"] = config_logging.get("datedlogfiles", False)
     if config["datedlogfiles"] is True:
         config["datedlogdir"] = config_logging.get("datedlogdir", "/var/log/jellyfin")
-        config["logfile"] = config['datedlogdir'] + "/" + datetime.today().strftime('%Y%m%d') + "_rffmpeg.log"
+        config["logfile"] = (
+            config["datedlogdir"]
+            + "/"
+            + datetime.today().strftime("%Y%m%d")
+            + "_rffmpeg.log"
+        )
     config["logdebug"] = config_logging.get("debug", False)
 
     # Parse the keys from the state group
@@ -235,8 +235,14 @@ def cleanup(signum="", frame=""):
     global config
 
     with dbconn(config) as cur:
-        cur.execute(f"DELETE FROM states WHERE process_id = {SQL_VAR_SIGN}", (config["current_pid"],))
-        cur.execute(f"DELETE FROM processes WHERE process_id = {SQL_VAR_SIGN}", (config["current_pid"],))
+        cur.execute(
+            f"DELETE FROM states WHERE process_id = {SQL_VAR_SIGN}",
+            (config["current_pid"],),
+        )
+        cur.execute(
+            f"DELETE FROM processes WHERE process_id = {SQL_VAR_SIGN}",
+            (config["current_pid"],),
+        )
 
 
 def generate_ssh_command(config, target_hostname):
@@ -310,12 +316,15 @@ def get_target_host(config):
 
         # Get the latest state
         with dbconn(config) as cur:
-            cur.execute(f"SELECT * FROM states WHERE host_id = {SQL_VAR_SIGN} ORDER BY id DESC", (hid,))
+            cur.execute(
+                f"SELECT * FROM states WHERE host_id = {SQL_VAR_SIGN} ORDER BY id DESC",
+                (hid,),
+            )
             current_state = cur.fetchone()
 
         if not current_state:
             current_state = "idle"
-            marking_pid = 'N/A'
+            marking_pid = "N/A"
         else:
             current_state = current_state[3]
             marking_pid = current_state[2]
@@ -339,7 +348,9 @@ def get_target_host(config):
         log.debug("Trying host ID {} '{}'".format(hid, host["hostname"]))
         # If it's marked as bad, continue
         if host["current_state"] == "bad":
-            log.debug("Host previously marked bad by PID {}".format(host['marking_pid']))
+            log.debug(
+                "Host previously marked bad by PID {}".format(host["marking_pid"])
+            )
             continue
 
         # Try to connect to the host and run a very quick command to determine if it is workable
@@ -361,12 +372,8 @@ def get_target_host(config):
                         " ".join(test_ssh_command + test_ffmpeg_command)
                     )
                 )
-                log.debug(
-                    "SSH test command stdout: {}".format(ret.stdout)
-                )
-                log.debug(
-                    "SSH test command stderr: {}".format(ret.stderr)
-                )
+                log.debug("SSH test command stdout: {}".format(ret.stdout))
+                log.debug("SSH test command stderr: {}".format(ret.stderr))
                 with dbconn(config) as cur:
                     cur.execute(
                         f"INSERT INTO states (host_id, process_id, state) VALUES ({SQL_VAR_SIGN}, {SQL_VAR_SIGN}, {SQL_VAR_SIGN})",
@@ -393,9 +400,17 @@ def get_target_host(config):
             target_hid = hid
             target_hostname = host["hostname"]
             target_servername = host["servername"]
-            log.debug("Selecting host as current lowest proc count (raw count: {}, weighted count: {})".format(raw_proc_count, weighted_proc_count))
+            log.debug(
+                "Selecting host as current lowest proc count (raw count: {}, weighted count: {})".format(
+                    raw_proc_count, weighted_proc_count
+                )
+            )
 
-    log.debug("Found optimal host ID {} '{}' ({})".format(target_hid, target_hostname, target_servername))
+    log.debug(
+        "Found optimal host ID {} '{}' ({})".format(
+            target_hid, target_hostname, target_servername
+        )
+    )
     return target_hid, target_hostname, target_servername
 
 
@@ -443,7 +458,9 @@ def run_local_ffmpeg(config, ffmpeg_args):
     return run_command(rffmpeg_ffmpeg_command, stdin, stdout, stderr)
 
 
-def run_remote_ffmpeg(config, target_hid, target_hostname, target_servername, ffmpeg_args):
+def run_remote_ffmpeg(
+    config, target_hid, target_hostname, target_servername, ffmpeg_args
+):
     """
     Run ffmpeg against the remote target_hostname.
     """
@@ -480,7 +497,9 @@ def run_remote_ffmpeg(config, target_hid, target_hostname, target_servername, ff
         else:
             rffmpeg_ffmpeg_command.append("{}".format(arg))
 
-    log.info("Running command on host '{}' ({})".format(target_hostname, target_servername))
+    log.info(
+        "Running command on host '{}' ({})".format(target_hostname, target_servername)
+    )
     log.debug(
         "Remote command: {}".format(
             " ".join(rffmpeg_ssh_command + rffmpeg_ffmpeg_command)
@@ -528,14 +547,18 @@ def run_ffmpeg(config, ffmpeg_args):
             format="%(asctime)s - %(name)s[%(process)s] - %(levelname)s - %(message)s",
         )
 
-    log.info("Starting rffmpeg as {} with args: {}".format(cmd_name, " ".join(ffmpeg_args)))
+    log.info(
+        "Starting rffmpeg as {} with args: {}".format(cmd_name, " ".join(ffmpeg_args))
+    )
 
     target_hid, target_hostname, target_servername = get_target_host(config)
 
     if not target_hostname or target_hostname == "localhost":
         ret = run_local_ffmpeg(config, ffmpeg_args)
     else:
-        ret = run_remote_ffmpeg(config, target_hid, target_hostname, target_servername, ffmpeg_args)
+        ret = run_remote_ffmpeg(
+            config, target_hid, target_hostname, target_servername, ffmpeg_args
+        )
 
     cleanup()
     if ret.returncode == 0:
@@ -556,7 +579,10 @@ def run_control(config):
         """
         rffmpeg CLI interface
         """
-        if not Path(config["state_dir"]).is_dir() or not Path(config["db_path"]).is_file():
+        if (
+            not Path(config["state_dir"]).is_dir()
+            or not Path(config["db_path"]).is_file()
+        ):
             return
 
         # List all DB migrations here
@@ -564,7 +590,9 @@ def run_control(config):
         # Check conditions for migrations
         with dbconn(config) as cur:
             # Migration for new servername (PR #36)
-            cur.execute("SELECT COUNT(*) AS CNTREC FROM pragma_table_info('hosts') WHERE name='servername'")
+            cur.execute(
+                "SELECT COUNT(*) AS CNTREC FROM pragma_table_info('hosts') WHERE name='servername'"
+            )
             if cur.fetchone()[0] == 0:
                 cur.execute(
                     "ALTER TABLE hosts ADD servername TEXT NOT NULL DEFAULT 'invalid'"
@@ -575,9 +603,10 @@ def run_control(config):
             with dbconn(config) as cur:
                 cur.execute("SELECT * FROM hosts")
                 for host in cur.fetchall():
-                    if host[3] == 'invalid':
+                    if host[3] == "invalid":
                         cur.execute(
-                            f"UPDATE hosts SET servername = {SQL_VAR_SIGN} WHERE hostname = {SQL_VAR_SIGN}", (host[1], host[1])
+                            f"UPDATE hosts SET servername = {SQL_VAR_SIGN} WHERE hostname = {SQL_VAR_SIGN}",
+                            (host[1], host[1]),
                         )
 
     @click.command(name="init", short_help="Initialize the system.")
@@ -623,15 +652,9 @@ def run_control(config):
 
         try:
             with dbconn(config) as cur:
-                cur.execute(
-                    "DROP TABLE IF EXISTS hosts"
-                )
-                cur.execute(
-                    "DROP TABLE IF EXISTS processes"
-                )
-                cur.execute(
-                    "DROP TABLE IF EXISTS states"
-                )
+                cur.execute("DROP TABLE IF EXISTS hosts")
+                cur.execute("DROP TABLE IF EXISTS processes")
+                cur.execute("DROP TABLE IF EXISTS states")
                 if DB_TYPE == "SQLITE":
                     cur.execute(
                         "CREATE TABLE hosts (id INTEGER PRIMARY KEY, hostname TEXT NOT NULL, weight INTEGER DEFAULT 1, servername TEXT NOT NULL)"
@@ -707,7 +730,10 @@ def run_control(config):
 
             # Get the latest state
             with dbconn(config) as cur:
-                cur.execute(f"SELECT * FROM states WHERE host_id = {SQL_VAR_SIGN} ORDER BY id DESC", (hid,))
+                cur.execute(
+                    f"SELECT * FROM states WHERE host_id = {SQL_VAR_SIGN} ORDER BY id DESC",
+                    (hid,),
+                )
                 current_state = cur.fetchone()
 
             if not current_state:
@@ -836,7 +862,10 @@ def run_control(config):
             name = host
         click.echo("Adding new host '{}' ({})".format(host, name))
         with dbconn(config) as cur:
-            cur.execute(f"INSERT INTO hosts (hostname, weight, servername) VALUES ({SQL_VAR_SIGN}, {SQL_VAR_SIGN}, {SQL_VAR_SIGN})", (host, weight, name))
+            cur.execute(
+                f"INSERT INTO hosts (hostname, weight, servername) VALUES ({SQL_VAR_SIGN}, {SQL_VAR_SIGN}, {SQL_VAR_SIGN})",
+                (host, weight, name),
+            )
 
     rffmpeg_click.add_command(rffmpeg_click_add)
 
@@ -857,7 +886,9 @@ def run_control(config):
             cur.execute(f"SELECT * FROM hosts WHERE {field} = {SQL_VAR_SIGN}", (host,))
             entry = cur.fetchall()
             if len(entry) < 1:
-                cur.execute(f"SELECT * FROM hosts WHERE {fieldAlt} = {SQL_VAR_SIGN}", (host,))
+                cur.execute(
+                    f"SELECT * FROM hosts WHERE {fieldAlt} = {SQL_VAR_SIGN}", (host,)
+                )
                 entry = cur.fetchall()
                 if len(entry) < 1:
                     fail("No hosts found to delete!")
@@ -868,7 +899,11 @@ def run_control(config):
                 click.echo("Removing {} hosts:".format(len(entry)))
             for host in entry:
                 hid, hostname, weight, servername = host
-                click.echo("\tID: {}\tHostname: {}\tServername: {}".format(hid, hostname, servername))
+                click.echo(
+                    "\tID: {}\tHostname: {}\tServername: {}".format(
+                        hid, hostname, servername
+                    )
+                )
                 cur.execute(f"DELETE FROM hosts WHERE id = {SQL_VAR_SIGN}", (hid,))
 
     rffmpeg_click.add_command(rffmpeg_click_remove)
@@ -934,7 +969,11 @@ def run_control(config):
                     fail("Multiple hosts found, please be more specific!")
                 host_id = entry[0][0]
 
-                click.echo("Clearing all active processes and states for host ID '{}'".format(host_id))
+                click.echo(
+                    "Clearing all active processes and states for host ID '{}'".format(
+                        host_id
+                    )
+                )
                 processes = cur.execute(
                     "SELECT id FROM processes WHERE host_id = ?", (host_id,)
                 ).fetchall()
