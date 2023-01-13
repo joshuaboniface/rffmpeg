@@ -48,11 +48,11 @@ SQL_VAR_SIGN = "?"
 SQL_PRIMARY_KEY="INTEGER"
 POSTGRES_DB = os.environ.get("RFFMPEG_POSTGRES_DB", "rffmpeg")
 POSTGRES_USER = os.environ.get("RFFMPEG_POSTGRES_USER")
-POSTGRES_PASS = os.environ.get("RFFMPEG_POSTGRES_PASS")
+POSTGRES_PASS = os.environ.get("RFFMPEG_POSTGRES_PASS", "")
 POSTGRES_PORT = os.environ.get("RFFMPEG_POSTGRES_PORT", "5432")
 POSTGRES_HOST = os.environ.get("RFFMPEG_POSTGRES_HOST", "localhost")
 
-if POSTGRES_DB != None and POSTGRES_USER != None:
+if POSTGRES_USER != None:
     DB_TYPE = "POSTGRES"
     SQL_VAR_SIGN = "%s"
     SQL_PRIMARY_KEY="SERIAL"
@@ -69,12 +69,12 @@ if POSTGRES_DB != None and POSTGRES_USER != None:
 
 # Open a database connection (context manager)
 @contextmanager
-def dbconn(config):
+def dbconn(config, init = False):
     """
     Open a database connection.
     """
     if DB_TYPE == "SQLITE":
-        if not Path(config["db_path"]).is_file():
+        if not init and not Path(config["db_path"]).is_file():
             fail(
                 "Failed to find database '{}' - did you forget to run 'rffmpeg init' or add all env vars for Postgresql?".format(
                     config["db_path"]
@@ -653,7 +653,7 @@ def run_control(config):
                 )
 
         try:
-            with dbconn(config) as cur:
+            with dbconn(config, True) as cur:
                 cur.execute("DROP TABLE IF EXISTS hosts")
                 cur.execute("DROP TABLE IF EXISTS processes")
                 cur.execute("DROP TABLE IF EXISTS states")
