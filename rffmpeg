@@ -75,11 +75,7 @@ def dbconn(config, init = False):
     """
     if DB_TYPE == "SQLITE":
         if not init and not Path(config["db_path"]).is_file():
-            fail(
-                "Failed to find database '{}' - did you forget to run 'rffmpeg init' or add all env vars for Postgresql?".format(
-                    config["db_path"]
-                )
-            )
+            fail(f"Failed to find database '{config["db_path"]}' - did you forget to run 'rffmpeg init' or add all env vars for Postgresql?")
         log.debug("Using SQLite as database.")
         conn = sqlite_connect(config["db_path"])
         conn.execute("PRAGMA foreign_keys = 1")
@@ -96,7 +92,7 @@ def dbconn(config, init = False):
             cur = conn.cursor()
             cur.execute("SELECT version()")
             db_version = cur.fetchone()
-            log.debug("Connected to Postgresql version {}".format(db_version))
+            log.debug(f"Connected to Postgresql version {db_version}")
             yield cur
             conn.commit()
         except (Exception, postgres_error) as error:
@@ -126,7 +122,7 @@ def load_config():
     config_file = os.environ.get("RFFMPEG_CONFIG", default_config_file)
 
     if not Path(config_file).is_file():
-        log.info("No config found in {}. Using default settings.".format(config_file))
+        log.info(f"No config found in {config_file}. Using default settings.")
         o_config = {
             "rffmpeg": {"logging": {}, "directories": {}, "remote": {}, "commands": {}}
         }
@@ -135,7 +131,7 @@ def load_config():
             try:
                 o_config = yaml.load(cfgfh, Loader=yaml.SafeLoader)
             except Exception as e:
-                fail("Failed to parse configuration file: {}".format(e))
+                fail(f"Failed to parse configuration file: {e}")
 
     config = dict()
 
@@ -268,9 +264,9 @@ def generate_ssh_command(config, target_hostname):
     if config["persist_time"] > 0:
         ssh_command.extend(["-o", "ControlMaster=auto"])
         ssh_command.extend(
-            ["-o", "ControlPath={}/ssh-%r@%h:%p".format(config["persist_dir"])]
+            ["-o", f"ControlPath={config["persist_dir"]}/ssh-%r@%h:%p"]
         )
-        ssh_command.extend(["-o", "ControlPersist={}".format(config["persist_time"])])
+        ssh_command.extend(["-o", f"ControlPersist={config["persist_time"]}"])
 
     # Add the remote config args
     for arg in config["remote_args"]:
@@ -278,7 +274,7 @@ def generate_ssh_command(config, target_hostname):
             ssh_command.append(arg)
 
     # Add user+host string
-    ssh_command.append("{}@{}".format(config["remote_user"], target_hostname))
+    ssh_command.append(f"{config["remote_user"]}@{target_hostname}")
 
     return ssh_command
 
@@ -347,12 +343,10 @@ def get_target_host(config):
     target_servername = None
     # For each host in the mapping, let's determine if it is suitable
     for hid, host in host_mappings.items():
-        log.debug("Trying host ID {} '{}'".format(hid, host["hostname"]))
+        log.debug(f"Trying host ID {hid} '{host["hostname"]}'")
         # If it's marked as bad, continue
         if host["current_state"] == "bad":
-            log.debug(
-                "Host previously marked bad by PID {}".format(host["marking_pid"])
-            )
+            log.debug(f"Host previously marked bad by PID {host["marking_pid"]}")
             continue
 
         # Try to connect to the host and run a very quick command to determine if it is workable
@@ -364,25 +358,17 @@ def get_target_host(config):
             ret = run_command(test_ssh_command + test_ffmpeg_command, PIPE, PIPE, PIPE)
             if ret.returncode != 0:
                 # Mark the host as bad
-                log.warning(
-                    "Marking host {} ({}) as bad due to retcode {}".format(
-                        host["hostname"], host["servername"], ret.returncode
-                    )
-                )
-                log.debug(
-                    "SSH test command was: {}".format(
-                        " ".join(test_ssh_command + test_ffmpeg_command)
-                    )
-                )
-                log.debug("SSH test command stdout: {}".format(ret.stdout))
-                log.debug("SSH test command stderr: {}".format(ret.stderr))
+                log.warning(f"Marking host {host["hostname"]} ({host["servername"]}) as bad due to retcode {ret.returncode}")
+                log.debug(f"SSH test command was: {" ".join(test_ssh_command + test_ffmpeg_command)}")
+                log.debug(f"SSH test command stdout: {ret.stdout}")
+                log.debug(f"SSH test command stderr: {ret.stderr}")
                 with dbconn(config) as cur:
                     cur.execute(
                         f"INSERT INTO states (host_id, process_id, state) VALUES ({SQL_VAR_SIGN}, {SQL_VAR_SIGN}, {SQL_VAR_SIGN})",
                         (hid, config["current_pid"], "bad"),
                     )
                 continue
-            log.debug("SSH test succeeded with retcode {}".format(ret.returncode))
+            log.debug(f"SSH test succeeded with retcode {ret.returncode}")
 
         # If the host state is idle, we can use it immediately
         if host["current_state"] == "idle":
@@ -402,17 +388,9 @@ def get_target_host(config):
             target_hid = hid
             target_hostname = host["hostname"]
             target_servername = host["servername"]
-            log.debug(
-                "Selecting host as current lowest proc count (raw count: {}, weighted count: {})".format(
-                    raw_proc_count, weighted_proc_count
-                )
-            )
+            log.debug(f"Selecting host as current lowest proc count (raw count: {raw_proc_count}, weighted count: {weighted_proc_count})")
 
-    log.debug(
-        "Found optimal host ID {} '{}' ({})".format(
-            target_hid, target_hostname, target_servername
-        )
-    )
+    log.debug(f"Found optimal host ID {target_hid} '{target_hostname}' ({target_servername})")
     return target_hid, target_hostname, target_servername
 
 
@@ -442,10 +420,10 @@ def run_local_ffmpeg(config, ffmpeg_args):
 
     # Append all the passed arguments directly
     for arg in ffmpeg_args:
-        rffmpeg_ffmpeg_command.append("{}".format(arg))
+        rffmpeg_ffmpeg_command.append(f"{arg}")
 
     log.info("Running command on host 'localhost'")
-    log.debug("Local command: {}".format(" ".join(rffmpeg_ffmpeg_command)))
+    log.debug(f"Local command: {" ".join(rffmpeg_ffmpeg_command)}")
 
     with dbconn(config) as cur:
         cur.execute(
@@ -495,18 +473,12 @@ def run_remote_ffmpeg(
     for arg in ffmpeg_args:
         # Match bad shell characters: * ' ( ) | [ ] or whitespace
         if search("[*'()|\[\]\s]", arg):
-            rffmpeg_ffmpeg_command.append('"{}"'.format(arg))
+            rffmpeg_ffmpeg_command.append(f'"{arg}"')
         else:
-            rffmpeg_ffmpeg_command.append("{}".format(arg))
+            rffmpeg_ffmpeg_command.append(f"{arg}")
 
-    log.info(
-        "Running command on host '{}' ({})".format(target_hostname, target_servername)
-    )
-    log.debug(
-        "Remote command: {}".format(
-            " ".join(rffmpeg_ssh_command + rffmpeg_ffmpeg_command)
-        )
-    )
+    log.info(f"Running command on host '{target_hostname}' ({target_servername})")
+    log.debug(f"Remote command: {" ".join(rffmpeg_ssh_command + rffmpeg_ffmpeg_command)}")
 
     with dbconn(config) as cur:
         cur.execute(
@@ -549,9 +521,7 @@ def run_ffmpeg(config, ffmpeg_args):
             format="%(asctime)s - %(name)s[%(process)s] - %(levelname)s - %(message)s",
         )
 
-    log.info(
-        "Starting rffmpeg as {} with args: {}".format(cmd_name, " ".join(ffmpeg_args))
-    )
+    log.info(f"Starting rffmpeg as {cmd_name} with args: {" ".join(ffmpeg_args)}")
 
     target_hid, target_hostname, target_servername = get_target_host(config)
 
@@ -564,9 +534,9 @@ def run_ffmpeg(config, ffmpeg_args):
 
     cleanup()
     if ret.returncode == 0:
-        log.info("Finished rffmpeg with return code {}".format(ret.returncode))
+        log.info(f"Finished rffmpeg with return code {ret.returncode}")
     else:
-        log.error("Finished rffmpeg with return code {}".format(ret.returncode))
+        log.error(f"Finished rffmpeg with return code {ret.returncode}")
     exit(ret.returncode)
 
 
@@ -646,28 +616,18 @@ def run_control(config):
             try:
                 os.makedirs(config["state_dir"])
             except OSError as e:
-                fail(
-                    "Failed to create state directory '{}': {}".format(
-                        config["state_dir"], e
-                    )
-                )
+                fail(f"Failed to create state directory '{config["state_dir"]}': {e}")
 
         try:
             with dbconn(config, True) as cur:
                 cur.execute("DROP TABLE IF EXISTS hosts")
                 cur.execute("DROP TABLE IF EXISTS processes")
                 cur.execute("DROP TABLE IF EXISTS states")
-                cur.execute(
-                    f"CREATE TABLE hosts (id {SQL_PRIMARY_KEY} PRIMARY KEY, hostname TEXT NOT NULL, weight INTEGER DEFAULT 1, servername TEXT NOT NULL)"
-                )
-                cur.execute(
-                    f"CREATE TABLE processes (id {SQL_PRIMARY_KEY} PRIMARY KEY, host_id INTEGER, process_id INTEGER, cmd TEXT)"
-                )
-                cur.execute(
-                    f"CREATE TABLE states (id {SQL_PRIMARY_KEY} PRIMARY KEY, host_id INTEGER, process_id INTEGER, state TEXT)"
-                )
+                cur.execute(f"CREATE TABLE hosts (id {SQL_PRIMARY_KEY} PRIMARY KEY, hostname TEXT NOT NULL, weight INTEGER DEFAULT 1, servername TEXT NOT NULL)")
+                cur.execute(f"CREATE TABLE processes (id {SQL_PRIMARY_KEY} PRIMARY KEY, host_id INTEGER, process_id INTEGER, cmd TEXT)")
+                cur.execute(f"CREATE TABLE states (id {SQL_PRIMARY_KEY} PRIMARY KEY, host_id INTEGER, process_id INTEGER, state TEXT)")
         except Exception as e:
-            fail("Failed to create database: {}".format(e))
+            fail(f"Failed to create database: {e}")
 
         os.chown(
             config["state_dir"],
@@ -781,9 +741,7 @@ def run_control(config):
             if len(host["commands"]) < 1:
                 first_command = "N/A"
             else:
-                first_command = "PID {}: {}".format(
-                    host["commands"][0][2], host["commands"][0][3]
-                )
+                first_command = f"PID {host["commands"][0][2]}: {host["commands"][0][3]}"
 
             host_entry = list()
             host_entry.append(
@@ -817,7 +775,7 @@ def run_control(config):
                         weight_length=weight_length,
                         state="",
                         state_length=state_length,
-                        commands="PID {}: {}".format(command[2], command[3]),
+                        commands=f"PID {command[2]}: {command[3]}",
                     )
                 )
 
@@ -851,7 +809,7 @@ def run_control(config):
         """
         if name is None:
             name = host
-        click.echo("Adding new host '{}' ({})".format(host, name))
+        click.echo(f"Adding new host '{host}' ({name})")
         with dbconn(config) as cur:
             cur.execute(
                 f"INSERT INTO hosts (hostname, weight, servername) VALUES ({SQL_VAR_SIGN}, {SQL_VAR_SIGN}, {SQL_VAR_SIGN})",
@@ -885,16 +843,12 @@ def run_control(config):
                     fail("No hosts found to delete!")
 
             if len(entry) == 1:
-                click.echo("Removing {} host:".format(len(entry)))
+                click.echo(f"Removing {len(entry)} host:")
             else:
-                click.echo("Removing {} hosts:".format(len(entry)))
+                click.echo(f"Removing {len(entry)} hosts:")
             for host in entry:
                 hid, hostname, weight, servername = host
-                click.echo(
-                    "\tID: {}\tHostname: {}\tServername: {}".format(
-                        hid, hostname, servername
-                    )
-                )
+                click.echo(f"\tID: {hid}\tHostname: {hostname}\tServername: {servername}")
                 cur.execute(f"DELETE FROM hosts WHERE id = {SQL_VAR_SIGN}", (hid,))
 
     rffmpeg_click.add_command(rffmpeg_click_remove)
@@ -947,35 +901,27 @@ def run_control(config):
                     field = "servername"
                     fieldAlt = "hostname"
 
-                entry = cur.execute(
-                    "SELECT id FROM hosts WHERE {} = ?".format(field), (host,)
-                ).fetchall()
+                cur.execute(f"SELECT id FROM hosts WHERE {field} = {SQL_VAR_SIGN}", (host,))
+                entry = cur.fetchall()
                 if len(entry) < 1:
-                    entry = cur.execute(
-                        "SELECT id FROM hosts WHERE {} = ?".format(fieldAlt), (host,)
-                    ).fetchall()
+                    cur.execute(f"SELECT id FROM hosts WHERE {fieldAlt} = {SQL_VAR_SIGN}", (host,))
+                    entry = cur.fetchall()
                     if len(entry) < 1:
                         fail("Host not found!")
                 if len(entry) > 1:
                     fail("Multiple hosts found, please be more specific!")
                 host_id = entry[0][0]
 
-                click.echo(
-                    "Clearing all active processes and states for host ID '{}'".format(
-                        host_id
-                    )
-                )
-                processes = cur.execute(
-                    "SELECT id FROM processes WHERE host_id = ?", (host_id,)
-                ).fetchall()
-                states = cur.execute(
-                    "SELECT id FROM states WHERE host_id = ?", (host_id,)
-                ).fetchall()
+                click.echo(f"Clearing all active processes and states for host ID '{host_id}'")
+                cur.execute(f"SELECT id FROM processes WHERE host_id = {SQL_VAR_SIGN}", (host_id,))
+                processes = cur.fetchall()
+                cur.execute(f"SELECT id FROM states WHERE host_id = {SQL_VAR_SIGN}", (host_id,))
+                states = cur.fetchall()
 
                 for process in processes:
-                    cur.execute("DELETE FROM processes WHERE id = ?", process)
+                    cur.execute(f"DELETE FROM processes WHERE id = {SQL_VAR_SIGN}", process)
                 for state in states:
-                    cur.execute("DELETE FROM states WHERE id = ?", state)
+                    cur.execute(f"DELETE FROM states WHERE id = {SQL_VAR_SIGN}", state)
             else:
                 click.echo("Clearing all active processes and states")
                 cur.execute("DELETE FROM processes")
