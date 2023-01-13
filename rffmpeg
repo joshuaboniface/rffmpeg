@@ -844,7 +844,7 @@ def run_control(config):
     @click.argument("host")
     def rffmpeg_click_remove(host):
         """
-        Remove a host with internal ID or IP or hostname or servername HOST from the database.
+        Remove a host with internal ID/IP/hostname/servername HOST from the database.
         """
         try:
             host = int(host)
@@ -904,6 +904,54 @@ def run_control(config):
 
     rffmpeg_click.add_command(rffmpeg_click_log)
 
+    @click.command(name="clear", short_help="Clear processes and states.")
+    @click.argument("host", required=False, default=None)
+    def rffmpeg_click_log(host):
+        """
+        Clear all active process and states from the database, optionally limited to a host with internal ID/IP/hostname/servername HOST.
+        This command is designed to assist in rare error cases whereby stuck process states are present in the database, and should be used sparingly. This will not affect running processes negatively, though rffmpeg will no longer see them as active. It is recommended to run this command only when you are sure that no processes are actually running.
+        """
+        with dbconn(config) as cur:
+            if host is not None:
+                try:
+                    host = int(host)
+                    field = "id"
+                except ValueError:
+                    field = "servername"
+                    fieldAlt = "hostname"
+
+                entry = cur.execute(
+                    "SELECT id FROM hosts WHERE {} = ?".format(field), (host,)
+                ).fetchall()
+                if len(entry) < 1:
+                    entry = cur.execute(
+                        "SELECT id FROM hosts WHERE {} = ?".format(fieldAlt), (host,)
+                    ).fetchall()
+                    if len(entry) < 1:
+                        fail("Host not found!")
+                if len(entry) > 1:
+                    fail("Multiple hosts found, please be more specific!")
+                host_id = entry[0][0]
+
+                click.echo("Clearing all active processes and states for host ID '{}'".format(host_id))
+                processes = cur.execute(
+                    "SELECT id FROM processes WHERE host_id = ?", (host_id,)
+                ).fetchall()
+                states = cur.execute(
+                    "SELECT id FROM states WHERE host_id = ?", (host_id,)
+                ).fetchall()
+
+                for process in processes:
+                    cur.execute("DELETE FROM processes WHERE id = ?", process)
+                for state in states:
+                    cur.execute("DELETE FROM states WHERE id = ?", state)
+            else:
+                click.echo("Clearing all active processes and states")
+                cur.execute("DELETE FROM processes")
+                cur.execute("DELETE FROM states")
+
+    rffmpeg_click.add_command(rffmpeg_click_log)
+
     return rffmpeg_click(obj={})
 
 
@@ -918,5 +966,6 @@ if __name__ == "__main__":
     if "rffmpeg" in cmd_name:
         run_control(config)
 
+    else:
         ffmpeg_args = all_args[1:]
         run_ffmpeg(config, ffmpeg_args)
