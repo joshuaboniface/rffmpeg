@@ -75,7 +75,7 @@ def dbconn(config, init = False):
     """
     if DB_TYPE == "SQLITE":
         if not init and not Path(config["db_path"]).is_file():
-            fail(f"Failed to find database '{config["db_path"]}' - did you forget to run 'rffmpeg init' or add all env vars for Postgresql?")
+            fail(f"Failed to find database '{config['db_path']}' - did you forget to run 'rffmpeg init' or add all env vars for Postgresql?")
         log.debug("Using SQLite as database.")
         conn = sqlite_connect(config["db_path"])
         conn.execute("PRAGMA foreign_keys = 1")
@@ -264,9 +264,9 @@ def generate_ssh_command(config, target_hostname):
     if config["persist_time"] > 0:
         ssh_command.extend(["-o", "ControlMaster=auto"])
         ssh_command.extend(
-            ["-o", f"ControlPath={config["persist_dir"]}/ssh-%r@%h:%p"]
+            ["-o", f"ControlPath={config['persist_dir']}/ssh-%r@%h:%p"]
         )
-        ssh_command.extend(["-o", f"ControlPersist={config["persist_time"]}"])
+        ssh_command.extend(["-o", f"ControlPersist={config['persist_time']}"])
 
     # Add the remote config args
     for arg in config["remote_args"]:
@@ -274,7 +274,7 @@ def generate_ssh_command(config, target_hostname):
             ssh_command.append(arg)
 
     # Add user+host string
-    ssh_command.append(f"{config["remote_user"]}@{target_hostname}")
+    ssh_command.append(f"{config['remote_user']}@{target_hostname}")
 
     return ssh_command
 
@@ -343,10 +343,10 @@ def get_target_host(config):
     target_servername = None
     # For each host in the mapping, let's determine if it is suitable
     for hid, host in host_mappings.items():
-        log.debug(f"Trying host ID {hid} '{host["hostname"]}'")
+        log.debug(f"Trying host ID {hid} '{host['hostname']}'")
         # If it's marked as bad, continue
         if host["current_state"] == "bad":
-            log.debug(f"Host previously marked bad by PID {host["marking_pid"]}")
+            log.debug(f"Host previously marked bad by PID {host['marking_pid']}")
             continue
 
         # Try to connect to the host and run a very quick command to determine if it is workable
@@ -358,8 +358,8 @@ def get_target_host(config):
             ret = run_command(test_ssh_command + test_ffmpeg_command, PIPE, PIPE, PIPE)
             if ret.returncode != 0:
                 # Mark the host as bad
-                log.warning(f"Marking host {host["hostname"]} ({host["servername"]}) as bad due to retcode {ret.returncode}")
-                log.debug(f"SSH test command was: {" ".join(test_ssh_command + test_ffmpeg_command)}")
+                log.warning(f"Marking host {host['hostname']} ({host['servername']}) as bad due to retcode {ret.returncode}")
+                log.debug(f"SSH test command was: {' '.join(test_ssh_command + test_ffmpeg_command)}")
                 log.debug(f"SSH test command stdout: {ret.stdout}")
                 log.debug(f"SSH test command stderr: {ret.stderr}")
                 with dbconn(config) as cur:
@@ -423,12 +423,12 @@ def run_local_ffmpeg(config, ffmpeg_args):
         rffmpeg_ffmpeg_command.append(f"{arg}")
 
     log.info("Running command on host 'localhost'")
-    log.debug(f"Local command: {" ".join(rffmpeg_ffmpeg_command)}")
+    log.debug(f"Local command: {' '.join(rffmpeg_ffmpeg_command)}")
 
     with dbconn(config) as cur:
         cur.execute(
             f"INSERT INTO processes (host_id, process_id, cmd) VALUES ({SQL_VAR_SIGN}, {SQL_VAR_SIGN}, {SQL_VAR_SIGN})",
-            (0, config["current_pid"], cmd_name + " " + " ".join(ffmpeg_args)),
+            (0, config["current_pid"], cmd_name + ' ' + ' '.join(ffmpeg_args)),
         )
         cur.execute(
             f"INSERT INTO states (host_id, process_id, state) VALUES ({SQL_VAR_SIGN}, {SQL_VAR_SIGN}, {SQL_VAR_SIGN})",
@@ -478,12 +478,12 @@ def run_remote_ffmpeg(
             rffmpeg_ffmpeg_command.append(f"{arg}")
 
     log.info(f"Running command on host '{target_hostname}' ({target_servername})")
-    log.debug(f"Remote command: {" ".join(rffmpeg_ssh_command + rffmpeg_ffmpeg_command)}")
+    log.debug(f"Remote command: {' '.join(rffmpeg_ssh_command + rffmpeg_ffmpeg_command)}")
 
     with dbconn(config) as cur:
         cur.execute(
             f"INSERT INTO processes (host_id, process_id, cmd) VALUES ({SQL_VAR_SIGN}, {SQL_VAR_SIGN}, {SQL_VAR_SIGN})",
-            (target_hid, config["current_pid"], cmd_name + " " + " ".join(ffmpeg_args)),
+            (target_hid, config["current_pid"], cmd_name + ' ' + ' '.join(ffmpeg_args)),
         )
         cur.execute(
             f"INSERT INTO states (host_id, process_id, state) VALUES ({SQL_VAR_SIGN}, {SQL_VAR_SIGN}, {SQL_VAR_SIGN})",
@@ -521,7 +521,7 @@ def run_ffmpeg(config, ffmpeg_args):
             format="%(asctime)s - %(name)s[%(process)s] - %(levelname)s - %(message)s",
         )
 
-    log.info(f"Starting rffmpeg as {cmd_name} with args: {" ".join(ffmpeg_args)}")
+    log.info(f"Starting rffmpeg as {cmd_name} with args: {' '.join(ffmpeg_args)}")
 
     target_hid, target_hostname, target_servername = get_target_host(config)
 
@@ -616,7 +616,7 @@ def run_control(config):
             try:
                 os.makedirs(config["state_dir"])
             except OSError as e:
-                fail(f"Failed to create state directory '{config["state_dir"]}': {e}")
+                fail(f"Failed to create state directory '{config['state_dir']}': {e}")
 
         try:
             with dbconn(config, True) as cur:
@@ -741,7 +741,7 @@ def run_control(config):
             if len(host["commands"]) < 1:
                 first_command = "N/A"
             else:
-                first_command = f"PID {host["commands"][0][2]}: {host["commands"][0][3]}"
+                first_command = f"PID {host['commands'][0][2]}: {host['commands'][0][3]}"
 
             host_entry = list()
             host_entry.append(
