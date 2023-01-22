@@ -76,3 +76,8 @@ rffmpeg:
         # Optional local fallback ffmpeg and ffprobe binary paths, if different from the above.
         #fallback_ffmpeg: "/usr/lib/jellyfin-ffmpeg/ffmpeg"
         #fallback_ffprobe: "/usr/lib/jellyfin-ffmpeg/ffprobe"
+
+        # Optional additions to special flags that output to stdout instead of stderr. This isn't an override.
+        #special_flags:
+        #   - "-muxers"
+        #   - "-fp_format"
