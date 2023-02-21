@@ -818,8 +818,8 @@ def run_control(config):
         click.echo(f"Adding new host '{host}' ({name})")
         with dbconn(config) as cur:
             cur.execute(
-                f"INSERT INTO hosts (hostname, weight, servername) VALUES ({SQL_VAR_SIGN}, {SQL_VAR_SIGN}, {SQL_VAR_SIGN}, {SQL_VAR_SIGN})",
-                (host, weight, name, created),
+                f"INSERT INTO hosts (servername, hostname, weight, created) VALUES ({SQL_VAR_SIGN}, {SQL_VAR_SIGN}, {SQL_VAR_SIGN}, {SQL_VAR_SIGN})",
+                (name, host, weight, created),
             )
 
     rffmpeg_click.add_command(rffmpeg_click_add)
