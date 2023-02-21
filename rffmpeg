@@ -46,6 +46,7 @@ log = logging.getLogger("rffmpeg")
 DB_TYPE = "SQLITE"
 SQL_VAR_SIGN = "?"
 SQL_PRIMARY_KEY="INTEGER"
+SQL_DATE_TIME="DATETIME"
 POSTGRES_DB = os.environ.get("RFFMPEG_POSTGRES_DB", "rffmpeg")
 POSTGRES_USER = os.environ.get("RFFMPEG_POSTGRES_USER")
 POSTGRES_PASS = os.environ.get("RFFMPEG_POSTGRES_PASS", "")
@@ -56,6 +57,7 @@ if POSTGRES_USER != None:
     DB_TYPE = "POSTGRES"
     SQL_VAR_SIGN = "%s"
     SQL_PRIMARY_KEY="SERIAL"
+    SQL_DATE_TIME="TIMESTAMP"
     POSTGRES_CREDENTIALS = {
         "dbname": POSTGRES_DB,
         "user": POSTGRES_USER,
@@ -313,7 +315,7 @@ def get_target_host(config):
     # Generate a mapping dictionary of hosts and processes
     host_mappings = dict()
     for host in hosts:
-        hid, hostname, weight, servername = host
+        hid, servername, hostname, weight, created = host
 
         # Get the latest state
         with dbconn(config) as cur:
@@ -626,7 +628,7 @@ def run_control(config):
                 cur.execute("DROP TABLE IF EXISTS hosts")
                 cur.execute("DROP TABLE IF EXISTS processes")
                 cur.execute("DROP TABLE IF EXISTS states")
-                cur.execute(f"CREATE TABLE hosts (id {SQL_PRIMARY_KEY} PRIMARY KEY, hostname TEXT NOT NULL, weight INTEGER DEFAULT 1, servername TEXT NOT NULL)")
+                cur.execute(f"CREATE TABLE hosts (id {SQL_PRIMARY_KEY} PRIMARY KEY, servername TEXT NOT NULL UNIQUE, hostname TEXT NOT NULL, weight INTEGER DEFAULT 1, created {SQL_DATE_TIME} NOT NULL)")
                 cur.execute(f"CREATE TABLE processes (id {SQL_PRIMARY_KEY} PRIMARY KEY, host_id INTEGER, process_id INTEGER, cmd TEXT)")
                 cur.execute(f"CREATE TABLE states (id {SQL_PRIMARY_KEY} PRIMARY KEY, host_id INTEGER, process_id INTEGER, state TEXT)")
         except Exception as e:
@@ -680,7 +682,7 @@ def run_control(config):
             }
 
         for host in hosts:
-            hid, hostname, weight, servername = host
+            hid, servername, hostname, weight, created = host
 
             # Get the latest state
             with dbconn(config) as cur:
@@ -810,13 +812,14 @@ def run_control(config):
         """
         Add a new host with IP or hostname HOST to the database.
         """
+        created = datetime.now()
         if name is None:
             name = host
         click.echo(f"Adding new host '{host}' ({name})")
         with dbconn(config) as cur:
             cur.execute(
-                f"INSERT INTO hosts (hostname, weight, servername) VALUES ({SQL_VAR_SIGN}, {SQL_VAR_SIGN}, {SQL_VAR_SIGN})",
-                (host, weight, name),
+                f"INSERT INTO hosts (hostname, weight, servername) VALUES ({SQL_VAR_SIGN}, {SQL_VAR_SIGN}, {SQL_VAR_SIGN}, {SQL_VAR_SIGN})",
+                (host, weight, name, created),
             )
 
     rffmpeg_click.add_command(rffmpeg_click_add)
@@ -850,7 +853,7 @@ def run_control(config):
             else:
                 click.echo(f"Removing {len(entry)} hosts:")
             for host in entry:
-                hid, hostname, weight, servername = host
+                hid, servername, hostname, weight, created = host
                 click.echo(f"\tID: {hid}\tHostname: {hostname}\tServername: {servername}")
                 cur.execute(f"DELETE FROM hosts WHERE id = {SQL_VAR_SIGN}", (hid,))
 
