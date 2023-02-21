@@ -329,8 +329,8 @@ def get_target_host(config):
             current_state = "idle"
             marking_pid = "N/A"
         else:
-            current_state = current_state[3]
-            marking_pid = current_state[2]
+            current_state = current_state["state"]
+            marking_pid = current_state["process_id"]
 
         # Create the mappings entry
         host_mappings[hid] = {
@@ -580,10 +580,10 @@ def run_control(config):
             with dbconn(config) as cur:
                 cur.execute("SELECT * FROM hosts")
                 for host in cur.fetchall():
-                    if host[3] == "invalid":
+                    if host["servername"] == "invalid":
                         cur.execute(
                             f"UPDATE hosts SET servername = {SQL_VAR_SIGN} WHERE hostname = {SQL_VAR_SIGN}",
-                            (host[1], host[1]),
+                            (host["hostname"], host["hostname"]),
                         )
 
     @click.command(name="init", short_help="Initialize the system.")
@@ -666,7 +666,7 @@ def run_control(config):
         # Determine if there are any fallback processes running
         fallback_processes = list()
         for process in processes:
-            if process[1] == 0:
+            if process["host_id"] == 0:
                 fallback_processes.append(process)
 
         # Generate a mapping dictionary of hosts and processes
@@ -695,7 +695,7 @@ def run_control(config):
             if not current_state:
                 current_state = "idle"
             else:
-                current_state = current_state[3]
+                current_state = current_state["state"]
 
             # Create the mappings entry
             host_mappings[hid] = {
