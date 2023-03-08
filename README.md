@@ -127,9 +127,9 @@ This depends on what "layer" you're asking at.
 * Media Servers: Jellyfin is officially supported; Emby seems to work fine, with caveats (see [Issue #10](https://github.com/joshuaboniface/rffmpeg/issues/10)); no others have been tested to my knowledge.
 * Operating Systems (source): Debian and its derivatives (Ubuntu, Linux Mint, etc.) should all work perfectly; other Linux operating systems should work fine too as the principles are the same; MacOS should work since it has an SSH client built in; Windows will not work as `rffmpeg` depends on some POSIX assumptions internally.
 * Operating Systems (target): Any Linux system which [`jellyfin-ffmpeg`](https://github.com/jellyfin/jellyfin-ffmpeg) supports, which is currently just Debian and Ubuntu; Windows *might* work if you can get an SSH server running on it (see [Issue #17](https://github.com/joshuaboniface/rffmpeg/issues/17)).
-* Install Methods for Jellyfin: Native packages/installers/archives are recommended; a set of [Jellyfin Docker containers integrating `rffmpeg`](https://github.com/Shadowghost/jellyfin-rffmpeg) has been created by [@Shadowghost](https://github.com/Shadowghost) as well as [another](https://github.com/aleksasiriski/jellyfin-rffmpeg) by [@aleksasiriski](https://github.com/aleksasiriski). In addition to these special docker images you can use linuxserver's image with [this mod](https://github.com/linuxserver/docker-mods/tree/jellyfin-rffmpeg).
+* Install Methods for Jellyfin: Native packages/installers/archives are recommended; a set of [Jellyfin Docker containers integrating `rffmpeg`](https://github.com/Shadowghost/jellyfin-rffmpeg) has been created by [@Shadowghost](https://github.com/Shadowghost). In addition to this special docker image you can use linuxserver's image with [this mod](https://github.com/linuxserver/docker-mods/tree/jellyfin-rffmpeg).
 * Install Methods for `rffmpeg`: Direct installation is recommended; a [Docker container to act as an ffmpeg transcode target](https://github.com/aleksasiriski/rffmpeg-worker) has been created by [@aleksasiriski](https://github.com/aleksasiriski) as well as [another](https://github.com/BasixKOR/rffmpeg-docker) by [@BasixKOR](https://github.com/BasixKOR).
-* Cloud: [HCloud Rffmpeg](https://github.com/aleksasiriski/hcloud-rffmpeg) script made to read rffmpeg database and spin up more transcode nodes in Hetzner Cloud.
+* OUTDATED Cloud: [HCloud Rffmpeg](https://github.com/aleksasiriski/hcloud-rffmpeg) script made to read rffmpeg database and spin up more transcode nodes in Hetzner Cloud.
 * Kubernetes: A short guide and example yaml files are available [here](https://github.com/aleksasiriski/rffmpeg-worker/tree/main/Kubernetes).
 
 ### Can `rffmpeg` mangle/alter FFMPEG arguments?
@@ -173,3 +173,7 @@ Absolutely - I'm happy to take pull requests for just about any bugfix or improv
 ### Can you help me set up my server?
 
 I'm always happy to help, though please ensure you try to follow the setup guide first - that's why I wrote it! Support can be found [on Matrix](https://matrix.to/#/#rffmpeg:matrix.org) or via email at `joshua@boniface.me`. Please note though that I may be unresponsive sometimes, though I will get back to you eventually I promise! Please don't open Issues here about setup problems; the Issue tracker is for bugs or feature requests instead.
+
+### `rffmpeg-go` - forked project
+
+There's also a [fork of this script written in Go](https://github.com/aleksasiriski/rffmpeg-go) with semver tags and binaries available, as well as docker images for both the [script](https://github.com/aleksasiriski/rffmpeg-go/pkgs/container/rffmpeg-go) and [Jellyfin](https://github.com/aleksasiriski/jellyfin-rffmpeg).
