@@ -183,7 +183,7 @@ def load_config():
     config["dir_group"] = config_directories.get("group", "sudo")
 
     # Parse the keys from the remote group
-    config["remote_user"] = config_remote.get("user", "jellyfin")
+    config["remote_user"] = config_remote.get("user", "")
     config["remote_args"] = config_remote.get(
         "args", ["-i", "/var/lib/jellyfin/.ssh/id_rsa"]
     )
@@ -360,6 +360,7 @@ def get_target_host(config):
             log.debug("Running SSH test")
             test_ssh_command = generate_ssh_command(config, host["hostname"])
             test_ssh_command.remove("-q")
+            test_ssh_command = [arg.replace('@', '', 1) if arg.startswith('@') else arg for arg in test_ssh_command]
             test_ffmpeg_command = [config["ffmpeg_command"], "-version"]
             ret = run_command(test_ssh_command + test_ffmpeg_command, PIPE, PIPE, PIPE)
             if ret.returncode != 0:
@@ -451,6 +452,7 @@ def run_remote_ffmpeg(
     Run ffmpeg against the remote target_hostname.
     """
     rffmpeg_ssh_command = generate_ssh_command(config, target_hostname)
+    rffmpeg_ssh_command = [arg.replace('@', '', 1) if arg.startswith('@') else arg for arg in rffmpeg_ssh_command]
     rffmpeg_ffmpeg_command = list()
 
     # Add any pre commands
