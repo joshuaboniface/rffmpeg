@@ -477,6 +477,8 @@ def run_remote_ffmpeg(
 
     # Append all the passed arguments with requoting of any problematic characters
     for arg in ffmpeg_args:
+        # Escape $ characters
+        arg = arg.replace('$', '\\$')
         # Match bad shell characters: * ' ( ) | [ ] or whitespace
         if search("[*'()|\[\]\s]", arg):
             rffmpeg_ffmpeg_command.append(f'"{arg}"')
