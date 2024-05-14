@@ -238,6 +238,8 @@ def cleanup(signum="", frame=""):
     """
     global config
 
+    log.debug(f"Cleaning up after signal {signum} PID {config['current_pid']}")
+
     with dbconn(config) as cur:
         cur.execute(
             f"DELETE FROM states WHERE process_id = {SQL_VAR_SIGN}",
