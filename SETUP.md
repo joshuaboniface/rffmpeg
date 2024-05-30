@@ -140,7 +140,7 @@ This guide is provided as a basic starting point - there are myriad possible com
 
    * **NOTE:** Make sure you understand the caveats of using hardware transcoding with `rffmpeg` from the main README if you do decide to go this route.
 
-1. Install the `jellyfin-ffmpeg` (Jellyfin <= 10.7.7), `jellyfin-ffmpeg5` (Jellyfin >= 10.8.13) or `jellyfin-ffmpeg6` (Jellyfin >= 10.9.0) package; follow the same steps as you would to install Jellyfin on the media server, only don't install `jellyfin` (and `jellyfin-server`/`jellyfin-web`) itself, just `jellyfin-ffmpeg[5,6]`.
+1. Install the `jellyfin-ffmpeg` (Jellyfin <= 10.7.7), `jellyfin-ffmpeg5` (Jellyfin >= 10.8.0) or `jellyfin-ffmpeg6` (Jellyfin >= 10.9.0) package; follow the same steps as you would to install Jellyfin on the media server, only don't install `jellyfin` (and `jellyfin-server`/`jellyfin-web`) itself, just `jellyfin-ffmpeg[5,6]`.
 
    ```
    transcode1 $ sudo apt -y install curl gnupg
