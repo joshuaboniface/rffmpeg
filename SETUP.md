@@ -140,14 +140,14 @@ This guide is provided as a basic starting point - there are myriad possible com
 
    * **NOTE:** Make sure you understand the caveats of using hardware transcoding with `rffmpeg` from the main README if you do decide to go this route.
 
-1. Install the `jellyfin-ffmpeg` (Jellyfin <= 10.7.7) or `jellyfin-ffmpeg5` (Jellyfin >= 10.8.0) package; follow the same steps as you would to install Jellyfin on the media server, only don't install `jellyfin` (and `jellyfin-server`/`jellyfin-web`) itself, just `jellyfin-ffmpeg[5]`.
+1. Install the `jellyfin-ffmpeg` (Jellyfin <= 10.7.7), `jellyfin-ffmpeg5` (Jellyfin >= 10.8.0) or `jellyfin-ffmpeg6` (Jellyfin >= 10.9.0) package; follow the same steps as you would to install Jellyfin on the media server, only don't install `jellyfin` (and `jellyfin-server`/`jellyfin-web`) itself, just `jellyfin-ffmpeg[5,6]`.
 
    ```
    transcode1 $ sudo apt -y install curl gnupg
    transcode1 $ curl -fsSL https://repo.jellyfin.org/ubuntu/jellyfin_team.gpg.key | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/jellyfin.gpg
    transcode1 $ echo "deb [arch=$( dpkg --print-architecture )] https://repo.jellyfin.org/$( awk -F'=' '/^ID=/{ print $NF }' /etc/os-release ) $( awk -F'=' '/^VERSION_CODENAME=/{ print $NF }' /etc/os-release ) main" | sudo tee /etc/apt/sources.list.d/jellyfin.list
    transcode1 $ sudo apt update
-   transcode1 $ sudo apt install jellyfin-ffmpeg5  # or jellyfin-ffmpeg with Jellyfin <= 10.7.7
+   transcode1 $ sudo apt install jellyfin-ffmpeg6  # or jellyfin-ffmpeg5 with Jellyfin <= 10.8.13, jellyfin-ffmpeg with Jellyfin <= 10.7.7
    ```
 
 1. Install the NFS client utilities:
