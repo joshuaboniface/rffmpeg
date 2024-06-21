@@ -467,8 +467,8 @@ def translate_harware_acceleration_args(rffmpeg_command):
         }
     }
 
-    remove_args = ['-init_hw_device', 'qsv=qs@va', '-hwaccel_flags', '+unsafe_output', '-level', '50']
-    add_args = ['-hwaccel_flags', '+unsafe_output', '-threads', '1']
+    remove_args = ['-init_hw_device', 'qsv=qs@va', '-level', '50']
+    add_args = ['-hwaccel_flags', '+unsafe_output']
 
     new_args = []
     
