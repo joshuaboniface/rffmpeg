@@ -402,6 +402,98 @@ def get_target_host(config):
     return target_hid, target_hostname, target_servername
 
 
+def translate_harware_acceleration_args(rffmpeg_command):
+    """
+    Translate hardware acceleration arguments to cude.
+    """
+    # # Check for hardware acceleration flags
+    # mappings = {
+    #     "-hwaccel": {"nvidia": "cuda", 
+    #                  "intel": "vaapi"},
+    #     "-hwaccel_device": {"nvidia": "cuda", 
+    #                         "intel": "qsv"},
+    #     "-init_hw_device": {"nvidia": "cuda=cu:0",
+    #                         "intel": ["vaapi=va:,kernel_driver=i915,driver=iHD", "qsv=qs@va"]},
+    #     "-filter_hw_device": {"nvidia": "cu",
+    #                           "intel": "qs"},
+    #     "-hwaccel_output_format": {"nvidia": "cuda",
+    #                                "intel": "vaapi"},
+    #     "-hwaccel_flags": {"nvidia": "+unsafe_output",
+    #                         "intel": None},
+    #     "-preset": {"nvidia": "p1",
+    #                "intel": "veryfast"},
+    #     "-level": {"nvidia": None,
+    #                "intel": "50"},
+    #     "-codec:v:0": {"nvidia": "hevc_nvenc",
+    #                  "intel": "hevc_qsv"},
+    #     "-vf": {"nvidia": "setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709,scale_cuda=format=yuv420p",
+    #             "intel": "setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709,scale_vaapi=format=nv12:extra_hw_frames=24,hwmap=derive_device=qsv,format=qsv"},
+    #                         }
+    # print(f"rffmpeg_command: {rffmpeg_command}")
+
+    # new_args = []
+    # for arg in rffmpeg_command:
+    #     if arg in mappings:
+    #         if mappings[arg]['nvidia'] not in new_args:
+    #             new_args.append(arg)
+    #             new_args.append(mappings[arg]["nvidia"])
+           
+    #         #if the value is a list add multiple values
+    #     else:
+    #         new_args.append(arg)
+    # Replacement dictionary
+    replacements = {
+        '-init_hw_device': {
+            'vaapi=va:,kernel_driver=i915,driver=iHD': 'cuda=cu:0',
+            'qsv=qs@va': ''
+        },
+        '-filter_hw_device': {
+            'qs': 'cu'
+        },
+        '-hwaccel': {
+            'vaapi': 'cuda'
+        },
+        '-hwaccel_output_format': {
+            'vaapi': 'cuda'
+        },
+        '-codec:v:0': {
+            'hevc_qsv': 'hevc_nvenc'
+        },
+        '-preset': {
+            'veryfast': 'p1'
+        },
+        '-vf': {
+            'setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709,scale_vaapi=format=nv12:extra_hw_frames=24,hwmap=derive_device=qsv,format=qsv': 'setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709,scale_cuda=format=yuv420p'
+        }
+    }
+
+    remove_args = ['-init_hw_device', 'qsv=qs@va', '-hwaccel_flags', '+unsafe_output', '-level', '50']
+
+
+    new_args = []
+    
+    i = 0
+    while i < len(rffmpeg_command):
+        arg = rffmpeg_command[i]
+        # Check if the current argument is in the replacements dictionary
+        if arg in replacements and i + 1 < len(rffmpeg_command) and rffmpeg_command[i + 1] in replacements[arg]:
+            replacement = replacements[arg][rffmpeg_command[i + 1]]
+            if replacement:  # If there's a replacement, use it
+                new_args.append(arg)
+                new_args.append(replacement)
+            # Skip the next argument since it has been replaced
+            i += 1
+        elif arg in remove_args:
+            # Skip this argument and possibly the next if it is part of a pair to remove
+            if i + 1 < len(rffmpeg_command) and rffmpeg_command[i + 1] in replacements.get(arg, {}):
+                i += 1
+        else:
+            new_args.append(arg)
+        i += 1
+
+    return new_args
+
+
 def run_local_command(config, command, command_args, stderr_as_stdout = False, mapped_cmd = None):
     """
     Run command locally, either because "localhost" is the target host, or because no good target
@@ -478,8 +570,11 @@ def run_remote_command(
     
     rffmpeg_command.extend(map(shlex.quote, command_args))
 
+    log.debug(f"Before translation: {rffmpeg_command}")
+    translated_command = translate_harware_acceleration_args(rffmpeg_command)
+
     log.info(f"Running command on host '{target_hostname}' ({target_servername})")
-    log.debug(f"Remote command: {' '.join(rffmpeg_ssh_command + rffmpeg_command)}")
+    log.debug(f"Remote command: {' '.join(rffmpeg_ssh_command + translated_command)}")
 
     with dbconn(config) as cur:
         cur.execute(
@@ -492,7 +587,7 @@ def run_remote_command(
         )
 
     return run_command(
-        rffmpeg_ssh_command + rffmpeg_command, stdin, stdout, stderr
+        rffmpeg_ssh_command + translated_command, stdin, stdout, stderr
     )
 
 
