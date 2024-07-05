@@ -557,19 +557,23 @@ def run_ffmpeg(config, ffmpeg_args):
 
     target_hid, target_hostname, target_servername = get_target_host(config)
 
-    if not target_hostname or target_hostname == "localhost":
-        ret = run_local_ffmpeg(config, target_hid, ffmpeg_args)
-    else:
-        ret = run_remote_ffmpeg(
-            config, target_hid, target_hostname, target_servername, ffmpeg_args
-        )
-
-    cleanup()
-    if ret.returncode == 0:
-        log.info(f"Finished rffmpeg with return code {ret.returncode}")
-    else:
-        log.error(f"Finished rffmpeg with return code {ret.returncode}")
-    exit(ret.returncode)
+    try:
+        returncode = 200
+        if not target_hostname or target_hostname == "localhost":
+            ret = run_local_ffmpeg(config, ffmpeg_args)
+            returncode = ret.returncode
+        else:
+            ret = run_remote_ffmpeg(
+                config, target_hid, target_hostname, target_servername, ffmpeg_args
+            )
+            returncode = ret.returncode
+    finally:
+        cleanup()
+        if returncode == 0:
+            log.info(f"Finished rffmpeg with return code {ret.returncode}")
+        else:
+            log.error(f"Finished rffmpeg with return code {ret.returncode}")
+        exit(returncode)
 
 
 def run_control(config):
