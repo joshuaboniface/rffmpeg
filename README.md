@@ -36,7 +36,7 @@
 
 `rffmpeg` does require a little bit more configuration to work properly however. For a comprehensive installation tutorial based on a reference setup, please see [the SETUP guide](SETUP.md).
 
-## Important Considerations
+## Setup and Usage
 
 ### The `rffmpeg` Configuration file
 
@@ -50,25 +50,31 @@ Each option has an explanatory comment above it detailing its purpose.
 
 Since the configuration file is YAML, ensure that you do not use "Tab" characters inside of it, only spaces.
 
+### CLI interface to `rffmpeg`
+
+`rffmpeg` is a [Click](https://click.palletsprojects.com)-based application; thus, all commands have a `-h` or `--help` flag to show usage and additional options that may be specified.
+
 ### Initializing `rffmpeg`
 
-After first installing `rffmpeg`, ensure you initialize the database with the `sudo rffmpeg init` command. Note that `sudo` is required here to create the required data paths, but afterwards, `rffmpeg` can be run by anyone in the configured group (by default the `sudo` group).
+After first installing `rffmpeg`, you must initialize the database with the `rffmpeg init` command.
 
-`rffmpeg` is a Click-based application; thus, all commands have a `-h` or `--help` flag to show usage and additional options that may be specified.
+Note that by default, `sudo`/root privilege is required for this command to create the required data paths, but afterwards, `rffmpeg` can be run by anyone in the configured group (by default the `sudo` group). You can bypass the `sudo` requirement with the `--no-root` command, for example when running in a rootless container; this will require the running user to have write permissions to the state and database parent directories, and will not perform any permissions modifications on the resulting files.
 
 ### Viewing Status
 
-Once installed and initialized, the status of the `rffmpeg` system can be viewed with the command `rffmpeg status`. This will show all configured target hosts, their states, and any active commands being run.
+Once installed and initialized, you can see the status of the `rffmpeg` system with the `rffmpeg status` command. This will show all configured target hosts, their states, and any active commands being run.
 
 ### Adding or Removing Target Hosts
 
-To add a target host, use the command `rffmpeg add`. This command takes the optional `-w`/`--weight` flag to adjust the weight of the target host (see below). A host can be added more than once.
+To add a target host, use the `rffmpeg add` command. You must add at least one target host for `rffmpeg` to be useful. This command takes the optional `-w`/`--weight` flag to adjust the weight of the target host (see below). A host can also be added more than once for a pseudo-weight, but this is an advanced usage.
 
-To remove a target host, use the command `rffmpeg remove`. This command takes either a target host name/IP, which affects all instances of that name, or a specific host ID. Removing an in-use target host will not terminate any running processes, though it may result in undefined behaviour within `rffmpeg`. Before removing a host it is best to ensure there is nothing using it.
+To remove a target host, use the `rffmpeg remove` command. This command takes either a target host name/IP, which affects all instances of that name, or a specific host ID. Removing an in-use target host will not terminate any running processes, though it may result in undefined behaviour within `rffmpeg`. Before removing a host it is best to ensure there is nothing using it.
 
 ### Viewing the Logfile
 
-The `rffmpeg` CLI offers a convenient way to view the log file. Use `rffmpeg log` to view the entire logfile in the current pager (usually `less`), or use `rffmpeg log -f` to follow any new log entries after that point (like `tail -0 -f`).
+The `rffmpeg` CLI offers a convenient way to view the log file. Use `rffmpeg log` to view the entire logfile in the default pager (usually `less`), or use `rffmpeg log -f` to follow any new log entries after that point (like `tail -0 -f`).
+
+## Important Considerations
 
 ### Localhost and Fallback
 
@@ -76,9 +82,15 @@ If one of the configured target hosts is called `localhost` or `127.0.0.1`, `rff
 
 In addition, `rffmpeg` will fall back to `localhost` automatically, even if it is not explicitly configured, should it be unable to find any working remote hosts. This helps prevent situations where `rffmpeg` cannot be run due to none of the remote host(s) being available.
 
-In both cases, note that, if hardware acceleration is configured, it *must* be available on the local host as well, or the `ffmpeg` commands will fail. There is no easy way around this without rewriting arguments, and this is currently out-of-scope for `rffmpeg`. You should always use a lowest-common-denominator approach when deciding on what additional option(s) to enable, such that any configured host can run any process, or accept that fallback will not work if all remote hosts are unavailable.
-
 The exact path to the local `ffmpeg` and `ffprobe` binaries can be overridden in the configuration, should their paths not match those of the remote system(s).
+
+### Hardware Acceleration
+
+Note that if hardware acceleration is configured in the calling application, **the exact same hardware acceleration modes must be available on all configured hosts, and, for fallback to work, the local host as well**, or the `ffmpeg` commands will fail.
+
+This is an explicit requirement, and there is no easy way around this without rewriting the passed arguments, which is explicitly out-of-scope for `rffmpeg` (see the FAQ entry below about mangling arguments).
+
+You should always use a lowest-common-denominator approach when deciding what hardware acceleration option(s) to enable, such that any configured host can run any process, or accept that fallback will not work if all remote hosts are unavailable.
 
 ### Target Host Selection
 
@@ -118,7 +130,7 @@ If for some reason all configured hosts are marked `bad`, fallback will be engag
 
 ### Why did you make `rffmpeg`?
 
-My virtualization setup (multiple 1U nodes with lots of live migration/failover) didn't lend itself well to passing a GPU into my Jellyfin VM, but I wanted to offload transcoding because doing 4K HEVC transcodes with a CPU performs horribly. I happened to have another machine (my "base" remote headless desktop/gaming server) which had a GPU, so I wanted to find a way to offload the transcoding to it. I came up with `rffmpeg` as a simple wrapper to the `ffmpeg` and `ffprobe` calls that Jellyfin (and Emby, and likely other media servers too) makes which would run them on that host instead. After finding it quite useful myself, I released it publicly as GPLv3 software so that others may benefit as well!
+My virtualization setup (multiple 1U nodes with lots of live migration/failover) didn't lend itself well to passing a GPU into my Jellyfin VM, but I wanted to offload transcoding because doing 4K HEVC transcodes with a CPU performs horribly. I happened to have another machine (my "base" remote headless desktop/gaming server) which had a GPU, so I wanted to find a way to offload the transcoding to it. I came up with `rffmpeg` as a simple wrapper to the `ffmpeg` and `ffprobe` calls that Jellyfin (and Emby, and likely other media servers too) makes which would run them on that host instead. After finding it quite useful myself, I released it publicly as GPLv3 software so that others may benefit as well! It has since received a lot of feedback and feature requests from the community, leading to the tool as it exists today.
 
 ### What supports `rffmpeg`?
 
@@ -134,19 +146,23 @@ This depends on what "layer" you're asking at.
 
 ### Can `rffmpeg` mangle/alter FFMPEG arguments?
 
-Explicitly *no*. `rffmpeg` is not designed to interact with the arguments that the media server passes to `ffmpeg`/`ffprobe` at all, nor will it. This is an explicit design decision due to the massive complexity of FFMpeg - to do this, I would need to create a mapping of just about every possible FFMpeg argument, what it means, and when to turn it on or off, which is way out of scope.
+Explicitly *no*. `rffmpeg` is not designed to interact with the arguments that the media server passes to `ffmpeg`/`ffprobe` at all, nor will it.
 
-This has a number of side effects:
+This is an explicit design decision due to the massive complexity of FFmpeg. FFmpeg has a very large number of possible arguments, many of which are position-dependent or dependent on other arguments elsewhere in the chain. To implement argument mangling, we would need to be aware of every possible FFmpeg argument, exactly how each argument maps to each other argument, and be able to dynamically parse and update arguments based on this. As should hopefully be quite obvious, this is a massive undertaking and not something that I have any desire to implement or manage in such a (relatively) simple utility.
 
- * `rffmpeg` does not know whether hardware acceleration is turned on or not (see above caveats under [Localhost and Fallback](#localhost-and-fallback)).
- * `rffmpeg` does not know what media is playing or where it's outputting files to, and cannot alter these paths.
- * `rffmpeg` cannot turn on or off special `ffmpeg` options depending on the host selected.
+This has a number of effects:
 
-Thus it is imperative that you set up your entire system correctly for `rffmpeg` to work. Please see the [SETUP guide](SETUP.md) for more information.
+ * `rffmpeg` cannot adjust any `ffmpeg` options based on the host selected.
+ * `rffmpeg` does not know whether hardware acceleration is turned on or not (see above caveats under [Hardware Acceleration](#hardware-acceleration)), or what type(s) of hardware acceleration are active.
+ * `rffmpeg` does not know what media file(s) is is handling or where it's outputting files to, and cannot alter these paths.
+
+Thus it is imperative that you set up your entire system correctly for `rffmpeg` to work using a "least-common-denominator" approach as required. Please see the [SETUP guide](SETUP.md) for more information.
 
 ### Can `rffmpeg` do Wake-On-LAN or other similar options to turn on a transcode server?
 
-Right now, not officially. You can use the linuxserver.io [docker mod](https://github.com/linuxserver/docker-mods/tree/jellyfin-rffmpeg). I've thought about implementing this more than once (most recently, in response to [Issue #21](https://github.com/joshuaboniface/rffmpeg/issues/21)) but ultimately I've never though this was worth the complexity and delays in spawning that it would add to the tool. That issue does provide one example of a workaround wrapper script that could accomplish this, but I don't see it being a part of the actual tool itself.
+Explicitly *no*, though the linuxserver.io [docker mod](https://github.com/linuxserver/docker-mods/tree/jellyfin-rffmpeg) does support this.
+
+I've thought about implementing this more than once (most recently, in response to [Issue #21](https://github.com/joshuaboniface/rffmpeg/issues/21)) but ultimately I do not believe this is worth the complexity and delays it would introduce when spawning processes. That issue does provide one example of a workaround wrapper script that could accomplish this, but I do not plan for it to be a part of `rffmpeg` itself.
 
 ### I'm getting an error, help!
 
