@@ -612,6 +612,13 @@ def run_control(config):
 
     @click.command(name="init", short_help="Initialize the system.")
     @click.option(
+        "--no-root",
+        "no_root_flag",
+        is_flag=True,
+        default=False,
+        help="Bypass root check and permission adjustments; if destinations aren't writable, init will fail.",
+    )
+    @click.option(
         "-y",
         "--yes",
         "confirm_flag",
@@ -619,13 +626,15 @@ def run_control(config):
         default=False,
         help="Confirm initialization.",
     )
-    def rffmpeg_click_init(confirm_flag):
+    def rffmpeg_click_init(no_root_flag, confirm_flag):
         """
         Initialize the rffmpeg system and database; this will erase all hosts and current state.
 
-        This command should be run as "sudo" before any attempts to use rffmpeg.
+        By default this command should be run as "sudo" before any attempts to use rffmpeg. If you
+        do not require root permissions to write to your configured state and database paths, you
+        may pass the "--no-root" option.
         """
-        if os.getuid() != 0:
+        if not no_root_flag and os.getuid() != 0:
             click.echo("Error: This command requires root privileges.")
             exit(1)
 
@@ -658,19 +667,21 @@ def run_control(config):
         except Exception as e:
             fail(f"Failed to create database: {e}")
 
-        os.chown(
-            config["state_dir"],
-            getpwnam(config["dir_owner"]).pw_uid,
-            getgrnam(config["dir_group"]).gr_gid,
-        )
-        os.chmod(config["state_dir"], 0o770)
-        if DB_TYPE == "SQLITE":
+        if not no_root_flag:
             os.chown(
-                config["db_path"],
+                config["state_dir"],
                 getpwnam(config["dir_owner"]).pw_uid,
                 getgrnam(config["dir_group"]).gr_gid,
             )
-            os.chmod(config["db_path"], 0o660)
+            os.chmod(config["state_dir"], 0o770)
+
+            if DB_TYPE == "SQLITE":
+                os.chown(
+                    config["db_path"],
+                    getpwnam(config["dir_owner"]).pw_uid,
+                    getgrnam(config["dir_group"]).gr_gid,
+                )
+                os.chmod(config["db_path"], 0o660)
 
     rffmpeg_click.add_command(rffmpeg_click_init)
 
