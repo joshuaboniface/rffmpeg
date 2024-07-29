@@ -404,7 +404,7 @@ def get_target_host(config):
     return target_hid, target_hostname, target_servername
 
 
-def run_local_command(config, command, command_args, stderr_as_stdout = False, mapped_cmd = None):
+def run_local_command(config, target_hid, command, command_args, stderr_as_stdout = False, mapped_cmd = None):
     """
     Run command locally, either because "localhost" is the target host, or because no good target
     host was found by get_target_host().
@@ -427,28 +427,32 @@ def run_local_command(config, command, command_args, stderr_as_stdout = False, m
     log.info("Running command on host 'localhost'")
     log.debug(f"Local command: {' '.join(rffmpeg_command)}")
 
+    if target_hid is None:
+        target_hid = 0
+        log.debug(f"Could not find any host, using fallback 'localhost'")
+
     with dbconn(config) as cur:
         cur.execute(
             f"INSERT INTO processes (host_id, process_id, cmd) VALUES ({SQL_VAR_SIGN}, {SQL_VAR_SIGN}, {SQL_VAR_SIGN})",
-            (0, config["current_pid"], command + ' ' + ' '.join(command_args)),
+            (target_hid, config["current_pid"], command + ' ' + ' '.join(command_args)),
         )
         cur.execute(
             f"INSERT INTO states (host_id, process_id, state) VALUES ({SQL_VAR_SIGN}, {SQL_VAR_SIGN}, {SQL_VAR_SIGN})",
-            (0, config["current_pid"], "active"),
+            (target_hid, config["current_pid"], "active"),
         )
 
     return run_command(rffmpeg_command, stdin, stdout, stderr)
 
 
-def run_local_ffmpeg(config, ffmpeg_args):
+def run_local_ffmpeg(config, target_hid, ffmpeg_args):
     """
     Run ffmpeg locally, either because "localhost" is the target host, or because no good target
     host was found by get_target_host().
     """
     if "ffprobe" in cmd_name:
-        return run_local_command(config, cmd_name, ffmpeg_args, mapped_cmd=config["fallback_ffprobe_command"])
+        return run_local_command(config, target_hid, cmd_name, ffmpeg_args, mapped_cmd=config["fallback_ffprobe_command"])
     else:
-        return run_local_command(config, cmd_name, ffmpeg_args, stderr_as_stdout=not any(item in config["special_flags"] for item in ffmpeg_args), mapped_cmd=config["fallback_ffmpeg_command"])
+        return run_local_command(config, target_hid, cmd_name, ffmpeg_args, stderr_as_stdout=not any(item in config["special_flags"] for item in ffmpeg_args), mapped_cmd=config["fallback_ffmpeg_command"])
 
 
 def run_remote_command(
@@ -554,7 +558,7 @@ def run_ffmpeg(config, ffmpeg_args):
     target_hid, target_hostname, target_servername = get_target_host(config)
 
     if not target_hostname or target_hostname == "localhost":
-        ret = run_local_ffmpeg(config, ffmpeg_args)
+        ret = run_local_ffmpeg(config, target_hid, ffmpeg_args)
     else:
         ret = run_remote_ffmpeg(
             config, target_hid, target_hostname, target_servername, ffmpeg_args
@@ -917,7 +921,7 @@ def run_control(config):
         target_hid, target_hostname, target_servername = get_target_host(config)
 
         if not target_hostname or target_hostname == "localhost":
-            ret = run_local_command(config, command, command_args)
+            ret = run_local_command(config, target_hid, command, command_args)
         else:
             ret = run_remote_command(
                 config,
