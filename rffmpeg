@@ -960,6 +960,10 @@ def run_control(config):
         View the rffmpeg log file.
         """
         if follow_flag:
+            if not os.path.exists(config["logfile"]):
+                click.echo("Failed to find log file; have you initialized rffmpeg?")
+                exit(1)
+
             with open(config["logfile"]) as file_:
                 # Go to the end of file
                 file_.seek(0, 2)
