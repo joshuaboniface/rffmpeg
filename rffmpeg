@@ -560,7 +560,7 @@ def run_ffmpeg(config, ffmpeg_args):
     try:
         returncode = 200
         if not target_hostname or target_hostname == "localhost":
-            ret = run_local_ffmpeg(config, ffmpeg_args)
+            ret = run_local_ffmpeg(config, None, ffmpeg_args)
             returncode = ret.returncode
         else:
             ret = run_remote_ffmpeg(
