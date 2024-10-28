@@ -36,6 +36,8 @@
 
 `rffmpeg` does require a little bit more configuration to work properly however. For a comprehensive installation tutorial based on a reference setup, please see [the SETUP guide](SETUP.md).
 
+**NOTE** Jellyfin 10.10.x and newer require an additional `TMPDIR` environment variable set to somewhere exported to the remote machine, or these paths will not work properly. Edit your Jellyfin startup/service configuration to set that. See the setup guide for more details.
+
 ## Setup and Usage
 
 ### The `rffmpeg` Configuration file

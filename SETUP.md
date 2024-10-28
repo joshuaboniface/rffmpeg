@@ -35,6 +35,8 @@ This guide is provided as a basic starting point - there are myriad possible com
 
    **NOTE:** On Docker, these directories are different. The main data directory (our `jellyfin_data_path`) is `/config`, and the cache directory is separate at `/cache`. Both must be exported and mounted on targets for proper operation.
 
+   **NOTE:** On Jellyfin 10.10.x and newer, temporary transient files were moved into the system temporary storage path (on Linux, usually `/tmp`). This will break rffmpeg for certain tasks that use these files, for instance trickplay generation. To restore the previous behaviour, ensure you set the `TMPDIR` environment variable for your Jellyfin service to a path under the data path above, for example `/var/lib/jellyfin/temp`, and create this directory with correct ownership and permissions.
+
 1. Create an SSH keypair to use for `rffmpeg`'s login to the remote server. For ease of use with the following steps, use the Jellyfin service user (`jellyfin`) to create the keypair and store it under its home directory (the Jellyfin data path above). I use `rsa` here but you can substitute `ed25519` instead (avoid `dsa` and `ecdsa` for reasons I won't get into here). Once done, copy the public key to `authorized_keys` which will be used to authenticate the key later.
 
    ```
