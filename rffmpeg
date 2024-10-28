@@ -649,7 +649,7 @@ def run_control(config):
         if not confirm_flag:
             try:
                 click.confirm(
-                    "Are you sure you want to (re)initalize the database",
+                    "Are you sure you want to (re)initialize the database",
                     prompt_suffix="? ",
                     abort=True,
                 )
