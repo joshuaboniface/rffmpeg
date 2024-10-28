@@ -23,15 +23,17 @@ This guide is provided as a basic starting point - there are myriad possible com
 
    ```
    jellyfin1 $ export jellyfin_data_path="/var/lib/jellyfin"
+   jellyfin1 $ export jellyfin_cache_path="/var/lib/jellyfin"
    transcode1 $ export jellyfin_data_path="/var/lib/jellyfin"
+   transcode1 $ export jellyfin_cache_path="/var/lib/jellyfin"
    ```
 
    The important subdirectories for `rffmpeg`'s operation are:
 
-   * `transcodes/`: Used to store on-the-fly transcoding files, and configurable separately in Jellyfin but with `rffmpeg` I recommend leaving it at the default location under the data path.
-   * `data/subtitles/`: Used to store on-the-fly extracted subtitles so that they can be reused later.
-   * `cache/`: Used to store cached extracted data.
-   * `.ssh/`: This doesn't exist yet but will after the next step.
+   * `$jellyfin_cache_path/`: Used to store cached extracted data.
+   * `$jellyfin_cache_path/transcodes/`: Used to store on-the-fly transcoding files, and configurable separately in Jellyfin but with `rffmpeg` I recommend leaving it at the default location under the cache path.
+   * `$jellyfin_data_path/data/subtitles/`: Used to store on-the-fly extracted subtitles so that they can be reused later.
+   * `$jellyfin_data_path/.ssh/`: This doesn't exist yet but will after the next step.
 
    **NOTE:** On Docker, these directories are different. The main data directory (our `jellyfin_data_path`) is `/config`, and the cache directory is separate at `/cache`. Both must be exported and mounted on targets for proper operation.
 
@@ -121,6 +123,8 @@ This guide is provided as a basic starting point - there are myriad possible com
 
    # jellyfin_data_path   first host                                                  second host, etc.
    /var/lib/jellyfin      192.168.0.101/32(rw,sync,no_subtree_check,no_root_squash)   192.168.0.102/32(rw,sync,no_subtree_check,no_root_squash)
+   # jellyfin_cache_path  first host                                                  second host, etc.
+   /var/cache/jellyfin    192.168.0.101/32(rw,sync,no_subtree_check,no_root_squash)   192.168.0.102/32(rw,sync,no_subtree_check,no_root_squash)
    # Local media path if required
    /srv/mymedia           192.168.0.101/32(rw,sync,no_subtree_check,no_root_squash)   192.168.0.102/32(rw,sync,no_subtree_check,no_root_squash)
    ```
@@ -132,6 +136,8 @@ This guide is provided as a basic starting point - there are myriad possible com
    jellyfin1 $ sudo exportfs
    /var/lib/jellyfin   192.168.0.101/32
    /var/lib/jellyfin   192.168.0.102/32
+   /var/cache/jellyfin 192.168.0.101/32
+   /var/cache/jellyfin 192.168.0.102/32
    ```
 
 ## Set up the transcode server (`transcode1`)
@@ -184,7 +190,9 @@ This guide is provided as a basic starting point - there are myriad possible com
 
       ```
       transcode1 $ echo "jellyfin1:${jellyfin_data_path} ${jellyfin_data_path} nfs defaults,vers=3,sync" | sudo tee -a /etc/fstab
+      transcode1 $ echo "jellyfin1:${jellyfin_cache_path} ${jellyfin_cache_path} nfs defaults,vers=3,sync" | sudo tee -a /etc/fstab
       transcode1 $ sudo mount ${jellyfin_data_path}
+      transcode1 $ sudo mount ${jellyfin_cache_path}
       ```
 
    * Use a SystemD `mount` unit, which is a newer way of doing mounts with SystemD. I personally prefer this method as I find it easier to set up automatically, but this is up to preference. An example based on mine would be:
@@ -206,11 +214,29 @@ This guide is provided as a basic starting point - there are myriad possible com
       WantedBy = remote-fs.target
       ```
 
+      ```
+      transcode1 $ cat /etc/systemd/system/var-cache-jellyfin.mount
+      [Unit]
+      Description = NFS volume for Jellyfin cache directory
+      Requires = network-online.target
+      After = network-online.target
+
+      [Mount]
+      type = nfs
+      What = jellyfin1:/var/cache/jellyfin
+      Where = /var/cache/jellyfin
+      Options = _netdev,sync,vers=3
+
+      [Install]
+      WantedBy = remote-fs.target
+      ```
+
       Once the unit file is created, you can then reload the unit list and mount it:
 
       ```
       transcode1 $ sudo systemctl daemon-reload
       transcode1 $ sudo systemctl enable --now var-lib-jellyfin.mount
+      transcode1 $ sudo systemctl enable --now var-cache-jellyfin.mount
       ```
 
       Note that mount units are fairly "new" and can be a bit finicky, be sure to read the SystemD documentation if you get stuck! Generally for new users, I'd recommend the `/etc/fstab` method instead.
@@ -254,6 +280,8 @@ As long as these steps work, all further steps should as well. If one of these *
    ```
 
 1. Change the value of `JELLYFIN_FFMPEG_OPT` to be `--ffmpeg=/usr/local/bin/ffmpeg` (the `rffmpeg` alias name `ffmpeg` in whatever path you installed `rffmpeg` to).
+
+1. On Jellyfin 10.10.x or newer, add `TMPDIR=$jellyfin_cache_path/temp`, for instance `TMPDIR=/var/cache/jellyfin/temp`, to ensure this is properly synchronized over the network.
 
 1. Save the file and restart Jellyfin:
 
