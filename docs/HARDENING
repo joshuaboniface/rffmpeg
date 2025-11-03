@@ -1,0 +1,92 @@
+
+*NOTICE* Do not do these tasks until you have a verified working solution
+
+These were tested and validated on Ubuntu 24.04 LTS, 2025-11-03
+
+# Hardening
+
+- Access for jellyfin user will be limited to jellyfin1 server only
+- Commands that jellyfin user can run will be limited to ffmpeg only
+- Commands run by jellyfin user will be logged
+    - (optional) Logs stored in separate log file
+
+## Prerequisites
+
+- static IP on the jellyfin1 server
+
+## Configure SSH server
+
+SSH server configuration is formed out of two files
+
+1. `10-jellyfin-limits.conf` - SSH config
+2. `limited-wrapper.sh` or `limited-wrapper.py` - a script to limit what commands can be run
+
+### 10-jellyfin-limits.conf
+
+This config file does few things
+- allows only jellyfin user to SSH from jellyfin server
+- limits jellyfin user login options to be only from jellyfin server
+- limits the commands jellyfin user can run to `limited-wrapper.py`
+
+1. Copy `10-jellyfin-limits.conf` to `/etc/ssh/sshd_config.d`
+2. Update the IP of the jellyfin server to the file
+3. Restart ssh
+    ```bash
+    sudo systemctl restart ssh
+    ```
+
+### limited-wrapper.sh and limited-wrapper.py
+
+This file analyses what commands are being run over SSH and limits them
+to the ones we defined.
+
+1. Update the ALLOWED list to match your `ffmpeg` file locations in the script
+2. Copy the script to `/usr/local/bin/limited-wrapper.py` and allow only root to modify it
+    ```bash
+    sudo chwon root:root /usr/local/bin/limited-wrapper.py &&\
+    sudo chmod 755 /usr/local/bin/limited-wrapper.py
+    ```
+### Test configuration
+
+1. Login to your jellyfin1 server and run
+    ```bash
+    sudo -u jellyfin ssh jellyfin@transcode1 /usr/bin/ffmpeg
+    ```
+   command should succeed and print out ffmpeg info
+
+2. Run a command that should fail
+
+    ```bash
+    sudo -u jellyfin ssh jellyfin@transcode1 uname -a
+    ```
+    command should fail and you should see `ERROR: command not allowed.`
+
+
+### Troubleshooting
+
+#### Permission denied (publickey)
+
+1. check your auth.log
+you should see the IP you are connecting from, make sure it is the same as in your `10-jellyfin-limits.conf` -file.
+
+## Logging
+
+All commands run by the jellyfin user are logged to standard syslog (via logger). They can be extracted to their own file.
+
+### rsyslog config
+
+File `limited-wrapper-log.conf` creates a rsyslog config to redirect the log entries to a separate file
+
+1. Update the `limited-wrapper-log.conf` file with the log file name you want. Default is `/var/log/jellyfin_commands.log`
+2. Copy the file to /etc/rsyslog.d/
+3. Correct the file rights
+    ```bash
+    sudo chown root:root /etc/rsyslog.d/limited-wrapper-log.conf &&\
+    sudo chmod 644 /etc/rsyslog.d/limited-wrapper-log.conf
+    ```
+4. Create the log file
+    ```bash
+    sudo touch /var/log/jellyfin_commands.log &&\
+    sudo chown syslog:adm /var/log/jellyfin_commands.log &&\
+    sudo chmod 664 /var/log/jellyfin_commands.log
+    ```
