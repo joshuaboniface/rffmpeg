@@ -19,14 +19,14 @@ These were tested and validated on Ubuntu 24.04 LTS, 2025-11-03
 SSH server configuration is formed out of two files
 
 1. `10-jellyfin-limits.conf` - SSH config
-2. `limited-wrapper.sh` - a script to limit what commands can be run
+2. `limited-wrapper.sh` or `limited-wrapper.py` - a script to limit what commands can be run
 
 ### 10-jellyfin-limits.conf
 
 This config file does few things
 - allows only jellyfin user to SSH from jellyfin server
 - limits jellyfin user login options to be only from jellyfin server
-- limits the commands jellyfin user can run to `limited-wrapper.sh`
+- limits the commands jellyfin user can run to `limited-wrapper.py`
 
 1. Copy `10-jellyfin-limits.conf` to `/etc/ssh/sshd_config.d`
 2. Update the IP of the jellyfin server to the file
@@ -35,16 +35,16 @@ This config file does few things
     sudo systemctl restart ssh
     ```
 
-### limited-wrapper.sh
+### limited-wrapper.sh and limited-wrapper.py
 
 This file analyses what commands are being run over SSH and limits them
 to the ones we defined.
 
 1. Update the ALLOWED list to match your `ffmpeg` file locations in the script
-2. Copy the script to `/usr/local/bin/limited-wrapper.sh` and allow only root to modify it
+2. Copy the script to `/usr/local/bin/limited-wrapper.py` and allow only root to modify it
     ```bash
-    sudo chwon root:root /usr/local/bin/limited-wrapper.sh &&\
-    sudo chmod 755 /usr/local/bin/limited-wrapper.sh
+    sudo chwon root:root /usr/local/bin/limited-wrapper.py &&\
+    sudo chmod 755 /usr/local/bin/limited-wrapper.py
     ```
 ### Test configuration
 
