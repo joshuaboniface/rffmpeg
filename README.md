@@ -34,7 +34,7 @@
 
 1. Profit!
 
-`rffmpeg` does require a little bit more configuration to work properly however. For a comprehensive installation tutorial based on a reference setup, please see [the SETUP guide](SETUP.md).
+`rffmpeg` does require a little bit more configuration to work properly however. For a comprehensive installation tutorial based on a reference setup, please see [the SETUP guide](docs/SETUP.md).
 
 **NOTE** Jellyfin 10.10.x and newer require an additional `TMPDIR` environment variable set to somewhere exported to the remote machine, or these paths will not work properly. Edit your Jellyfin startup/service configuration to set that. See the setup guide for more details.
 
@@ -193,5 +193,7 @@ Absolutely - I'm happy to take pull requests for just about any bugfix or improv
 I'm always happy to help, though please ensure you try to follow the setup guide first - that's why I wrote it! Support can be found [on Matrix](https://matrix.to/#/#rffmpeg:matrix.org) or via email at `joshua@boniface.me`. Please note though that I may be unresponsive sometimes, though I will get back to you eventually I promise! Please don't open Issues here about setup problems; the Issue tracker is for bugs or feature requests instead.
 
 ### `rffmpeg-go` - forked project
+
+NOTICE: project was archived in Oct 27, 2024.
 
 There's also a [fork of this script written in Go](https://github.com/aleksasiriski/rffmpeg-go) with semver tags and binaries available, as well as docker images for both the [script](https://github.com/aleksasiriski/rffmpeg-go/pkgs/container/rffmpeg-go) and [Jellyfin](https://github.com/aleksasiriski/jellyfin-rffmpeg).
