@@ -226,11 +226,28 @@ def load_config():
         "-fp_format",
     ] + config_commands.get("special_flags", [])
 
+    # Parse fallback rules (optional)
+    config["fallback_rules"] = config_base.get("fallback_rules", [])
+
     # Set the current PID of this process
     config["current_pid"] = os.getpid()
 
     return config
 
+def should_use_fallback(config, ffmpeg_args):
+    """
+    Check configured fallback_rules and decide whether to force fallback.
+    """
+    rules = config.get("fallback_rules", [])
+    joined_args = " ".join(ffmpeg_args).lower()
+
+    for rule in rules:
+        patterns = [p.lower() for p in rule.get("match", [])]
+        if all(p in joined_args for p in patterns):
+            log.info(f"[rffmpeg] Matched fallback rule: {patterns}")
+            return True
+
+    return False
 
 def cleanup(signum="", frame=""):
     """
@@ -552,6 +569,24 @@ def run_ffmpeg(config, ffmpeg_args):
     hook_signals()
 
     setup_logging(config)
+
+    # Determine if we should use fallback ffmpeg/ffprobe
+    use_fallback = should_use_fallback(config, ffmpeg_args)
+    if use_fallback:
+        if "ffprobe" in cmd_name:
+            ret = run_local_command(
+                config, None, cmd_name, ffmpeg_args,
+                mapped_cmd=config["fallback_ffprobe_command"]
+            )
+        else:
+            ret = run_local_command(
+                config, None, cmd_name, ffmpeg_args,
+                stderr_as_stdout=not any(item in config["special_flags"] for item in ffmpeg_args),
+                mapped_cmd=config["fallback_ffmpeg_command"]
+            )
+        cleanup()
+        log.info(f"[rffmpeg] Finished fallback run with return code {ret.returncode}")
+        exit(ret.returncode)
 
     log.info(f"Starting rffmpeg as {cmd_name} with args: {' '.join(ffmpeg_args)}")
 

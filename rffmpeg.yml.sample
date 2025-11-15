@@ -81,3 +81,9 @@ rffmpeg:
         #special_flags:
         #   - "-muxers"
         #   - "-fp_format"
+
+    # Specific rules to tell rffmpeg when to use the fallback ffmpeg/ffprobe
+    fallback_rules:
+        - match: ["-vf blackframe", "-f null"]   # Intro Skipper
+        - match: ["-f chromaprint"]              # chromaprint analyzer
+        - match: ["-ss 0", "-to 2"]              # very short clip scans
